@@ -17,7 +17,8 @@ const Uploader = ({ onUploadSuccess }) => {
     
     setUploading(true);
     try {
-      const res = await axios.post('http://localhost:8000/api/upload', formData);
+      const API_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+      const res = await axios.post(`${API_URL}/api/upload`, formData);
       onUploadSuccess(res.data.study_id);
     } catch (err) {
       alert('Upload failed');
@@ -55,7 +56,8 @@ export default function Dashboard() {
   const saveReport = async () => {
     if (!currentStudy) return;
     try {
-      await axios.post('http://localhost:8000/api/reports', {
+      const API_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+      await axios.post(`${API_URL}/api/reports`, {
         study_id: currentStudy,
         doctor_id: '123', // Dummy doctor 
         report_content: report,
@@ -92,7 +94,7 @@ export default function Dashboard() {
                  <span className="text-white text-sm font-medium px-2 py-1 bg-black/50 rounded">OHIF Viewer</span>
               </div>
               <iframe 
-                 src="http://localhost:8042/ohif/viewer.html" 
+                 src={`${import.meta.env.VITE_PACS_URL || 'http://localhost:8042'}/ohif/viewer.html`}
                  className="w-full h-full border-0"
                  title="DICOM Viewer"
               />
@@ -148,7 +150,7 @@ export default function Dashboard() {
             <div className="mt-6 flex gap-3">
                <button onClick={() => setShowShareModal(false)} className="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-xl">إلغاء</button>
                <button onClick={() => {
-                 alert('تم إنشاء الرابط: http://localhost:5173/patient/token123');
+                 alert(`تم إنشاء الرابط: ${window.location.origin}/patient/token123`);
                  setShowShareModal(false);
                }} className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-lg shadow-blue-500/30">إنشاء الرابط</button>
             </div>

@@ -15,7 +15,8 @@ export default function PatientPortal() {
   }, [token]);
 
   const downloadPDF = () => {
-    window.open(`http://localhost:8000/api/reports/${studyInfo.study_id}/pdf?token=${token}`, '_blank');
+    const API_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+    window.open(`${API_URL}/api/reports/${studyInfo.study_id}/pdf?token=${token}`, '_blank');
   };
 
   return (
@@ -31,7 +32,7 @@ export default function PatientPortal() {
         {/* Left Side: Images */}
         <div className="flex-1 bg-black rounded-2xl overflow-hidden shadow-lg border border-gray-200 relative min-h-[500px]">
           <iframe 
-             src="http://localhost:8042/ohif/viewer.html" 
+             src={`${import.meta.env.VITE_PACS_URL || 'http://localhost:8042'}/ohif/viewer.html`}
              className="w-full h-full border-0"
              title="Patient DICOM Viewer"
           />
