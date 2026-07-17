@@ -1,6 +1,5 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import { useDropzone } from 'react-dropzone';
-import { UploadCloud, FileType, CheckCircle, Share2, Moon, Sun, LogOut, ClipboardCopy, List, FileText, ChevronRight } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { FileType, CheckCircle, Share2, Moon, Sun, LogOut, ClipboardCopy, List, FileText, ChevronRight } from 'lucide-react';
 import axios from 'axios';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
@@ -12,63 +11,6 @@ function getAuthHeaders() {
   const token = localStorage.getItem('cloudrad_token');
   return { Authorization: `Bearer ${token}` };
 }
-
-const Uploader = ({ onUploadSuccess }) => {
-  const [uploading, setUploading] = useState(false);
-
-  const onDrop = useCallback(async (acceptedFiles) => {
-    const file = acceptedFiles.find(f => f.name.endsWith('.zip'));
-    if (!file) return alert('برجاء رفع ملف ZIP يحتوي على صور DICOM');
-
-    const formData = new FormData();
-    formData.append('file', file);
-
-    setUploading(true);
-    try {
-      const res = await axios.post(`${API_URL}/api/upload`, formData, {
-        headers: getAuthHeaders(),
-      });
-      onUploadSuccess(res.data.study_id);
-    } catch (err) {
-      if (err.response?.status === 401) {
-        alert('انتهت صلاحية الجلسة. أعد تسجيل الدخول.');
-        window.location.href = '/login';
-      } else {
-        alert('فشل رفع الملف');
-      }
-    } finally {
-      setUploading(false);
-    }
-  }, [onUploadSuccess]);
-
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
-
-  return (
-    <div {...getRootProps()} className={`relative group overflow-hidden border-2 border-dashed rounded-3xl p-14 mt-6 text-center cursor-pointer transition-all duration-300 ${isDragActive ? 'border-cyan-400 bg-cyan-900/20 scale-[1.02] shadow-[0_0_30px_rgba(34,211,238,0.2)]' : 'border-slate-600/50 hover:border-blue-400/50 bg-slate-800/30 hover:bg-slate-800/50 shadow-inner'}`}>
-      {/* Glow effect behind dropzone */}
-      <div className={`absolute -inset-10 bg-gradient-to-r from-blue-500/0 via-cyan-400/10 to-blue-500/0 blur-2xl transition-opacity duration-500 opacity-0 group-hover:opacity-100 ${isDragActive ? 'opacity-100' : ''}`}></div>
-      
-      <div className="relative z-10 flex flex-col items-center">
-        <input {...getInputProps()} />
-        <div className={`p-4 rounded-full mb-4 transition-colors duration-300 ${isDragActive ? 'bg-cyan-500/20 text-cyan-400' : 'bg-slate-700/50 text-slate-400 group-hover:bg-blue-500/20 group-hover:text-blue-400'}`}>
-          <UploadCloud className="h-14 w-14 drop-shadow-md" />
-        </div>
-        
-        {uploading ? (
-          <div className="space-y-2">
-            <p className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-400 animate-pulse">جاري فحص المستندات ورفعها...</p>
-            <p className="text-sm text-slate-400">الرجاء الانتظار حتى تكتمل المعالجة</p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            <p className="text-lg font-medium text-slate-200">اسحب وأفلت مجلد الفحص هنا <span className="text-gray-500 font-normal">(.zip)</span></p>
-            <p className="text-sm text-slate-500">أو اضغط لاختيار المجلد يدوياً من جهازك</p>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
 
 export default function Dashboard({ doctor, onLogout }) {
   const [darkMode, setDarkMode] = useState(true);
@@ -190,7 +132,7 @@ export default function Dashboard({ doctor, onLogout }) {
         </div>
         <div className="flex items-center gap-4">
           <span className={`text-sm font-medium px-4 py-1.5 rounded-full hidden md:inline ${darkMode ? 'bg-slate-800/50 border border-slate-700/50 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
-            مرحباً، د. {doctor.name}
+            مرحباً، {doctor?.role === 'admin' ? 'المدير ' : doctor?.role === 'doctor' ? 'د. ' : ''}{doctor?.name}
           </span>
           
           {currentStudy && (
@@ -221,9 +163,6 @@ export default function Dashboard({ doctor, onLogout }) {
                 {studies.length} دراسة موجودة
               </span>
             </div>
-
-            {/* Upload Section */}
-            <Uploader onUploadSuccess={(id) => { fetchStudies(); selectStudy(id); }} />
 
             {/* Studies List */}
             <div className="mt-12 space-y-4">
@@ -313,7 +252,7 @@ export default function Dashboard({ doctor, onLogout }) {
                 )}
               </div>
               <iframe
-                src={`${PACS_URL}/ohif/viewer.html`}
+                src={`${PACS_URL}/ohif/viewer.html${currentStudyData ? '?StudyInstanceUIDs=' + currentStudyData.orthanc_study_uuid : ''}`}
                 className="w-full h-full border-0"
                 title="DICOM Viewer"
               />
@@ -330,13 +269,15 @@ export default function Dashboard({ doctor, onLogout }) {
 
               <div className={`flex-1 flex flex-col rounded-2xl overflow-hidden border shadow-inner ${darkMode ? 'bg-[#0a0f1c] border-slate-800/50' : 'bg-slate-50 border-slate-200'}`}>
                 {/* Notice: ReactQuill styling custom overrides can go in css, but keeping it standard for now */}
-                <ReactQuill theme="snow" value={report} onChange={setReport} className={`h-full flex-1 flex flex-col mb-12 custom-quill ${darkMode ? 'dark-quill' : ''}`} />
+                <ReactQuill theme="snow" value={report} onChange={setReport} readOnly={doctor?.role === 'user'} className={`h-full flex-1 flex flex-col mb-12 custom-quill ${darkMode ? 'dark-quill' : ''}`} />
               </div>
 
-              <button onClick={saveReport} className="mt-6 w-full relative group overflow-hidden bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold text-lg py-3.5 rounded-2xl shadow-[0_0_20px_rgba(37,99,235,0.3)] hover:shadow-[0_0_25px_rgba(37,99,235,0.5)] transition-all duration-300">
-                 حفظ التقرير بصيغته النهائية
-                 <div className="absolute top-0 -inset-full h-full w-1/2 block transform -skew-x-12 bg-gradient-to-r from-transparent to-white opacity-20 group-hover:animate-[shine_1s_infinite]"></div>
-              </button>
+              {doctor?.role !== 'user' && (
+                <button onClick={saveReport} className="mt-6 w-full relative group overflow-hidden bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold text-lg py-3.5 rounded-2xl shadow-[0_0_20px_rgba(37,99,235,0.3)] hover:shadow-[0_0_25px_rgba(37,99,235,0.5)] transition-all duration-300">
+                  حفظ التقرير بصيغته النهائية
+                  <div className="absolute top-0 -inset-full h-full w-1/2 block transform -skew-x-12 bg-gradient-to-r from-transparent to-white opacity-20 group-hover:animate-[shine_1s_infinite]"></div>
+                </button>
+              )}
             </div>
           </div>
         )}

@@ -24,6 +24,7 @@ export default function LoginPage({ onLogin }) {
         name: res.data.full_name,
         email: res.data.email,
         clinic_id: res.data.clinic_id,
+        role: res.data.role,
       }));
       
       onLogin(res.data);

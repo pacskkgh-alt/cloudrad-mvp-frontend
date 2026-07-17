@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import Dashboard from './pages/Dashboard';
+import UserDashboard from './pages/UserDashboard';
+import AdminDashboard from './pages/AdminDashboard';
 import PatientPortal from './pages/PatientPortal';
 import LoginPage from './pages/LoginPage';
 
@@ -27,6 +29,7 @@ function App() {
       name: data.full_name,
       email: data.email,
       clinic_id: data.clinic_id,
+      role: data.role,
     });
   };
 
@@ -53,6 +56,8 @@ function App() {
           path="/"
           element={
             doctor ? (
+              doctor.role === 'admin' ? <AdminDashboard doctor={doctor} onLogout={handleLogout} /> :
+              doctor.role === 'user' ? <UserDashboard doctor={doctor} onLogout={handleLogout} /> :
               <Dashboard doctor={doctor} onLogout={handleLogout} />
             ) : (
               <Navigate to="/login" replace />
