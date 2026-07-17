@@ -3,7 +3,7 @@ import { useDropzone } from 'react-dropzone';
 import { UploadCloud, CheckCircle, Clock, Activity, FileType, MapPin, User, LogOut, Sun, Moon, Loader2 } from 'lucide-react';
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+const API_URL = import.meta.env.VITE_BACKEND_URL || 'https://api.167-233-227-144.nip.io';
 
 function getAuthHeaders() {
   const token = localStorage.getItem('cloudrad_token');

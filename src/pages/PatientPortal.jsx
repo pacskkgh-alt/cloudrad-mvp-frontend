@@ -4,8 +4,8 @@ import { useParams } from 'react-router-dom';
 import { DownloadCloud, ShieldCheck, Lock, Loader2, AlertTriangle, FileText, Image as ImageIcon } from 'lucide-react';
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
-const PACS_URL = import.meta.env.VITE_PACS_URL || 'http://localhost:8042';
+const API_URL = import.meta.env.VITE_BACKEND_URL || 'https://api.167-233-227-144.nip.io';
+const PACS_URL = import.meta.env.VITE_PACS_URL || 'https://pacs.167-233-227-144.nip.io';
 
 export default function PatientPortal() {
   const { token } = useParams();

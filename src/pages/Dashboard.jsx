@@ -4,8 +4,8 @@ import axios from 'axios';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 
-const API_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
-const PACS_URL = import.meta.env.VITE_PACS_URL || 'http://localhost:8042';
+const API_URL = import.meta.env.VITE_BACKEND_URL || 'https://api.167-233-227-144.nip.io';
+const PACS_URL = import.meta.env.VITE_PACS_URL || 'https://pacs.167-233-227-144.nip.io';
 
 function getAuthHeaders() {
   const token = localStorage.getItem('cloudrad_token');
