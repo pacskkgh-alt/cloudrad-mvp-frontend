@@ -252,7 +252,7 @@ export default function Dashboard({ doctor, onLogout }) {
                 )}
               </div>
               <iframe
-                src={`${PACS_URL}/ohif/viewer.html${currentStudyData ? '?StudyInstanceUIDs=' + currentStudyData.orthanc_study_uuid : ''}`}
+                src={`${PACS_URL}/osimis-viewer/app/index.html${currentStudyData ? '?study=' + currentStudyData.orthanc_study_uuid : ''}`}
                 className="w-full h-full border-0"
                 title="DICOM Viewer"
               />

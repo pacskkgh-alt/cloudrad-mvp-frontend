@@ -187,7 +187,7 @@ export default function PatientPortal() {
                  <span className="text-white/80 text-[10px] lg:text-xs font-bold tracking-widest uppercase px-3 py-1.5 bg-white/10 rounded-lg backdrop-blur-md text-left" dir="ltr">DICOM VIEWER</span>
              </div>
             <iframe
-              src={`${PACS_URL}/ohif/viewer.html${studyInfo?.orthanc_study_uuid ? '?StudyInstanceUIDs=' + studyInfo.orthanc_study_uuid : ''}`}
+              src={`${PACS_URL}/osimis-viewer/app/index.html${studyInfo?.orthanc_study_uuid ? '?study=' + studyInfo.orthanc_study_uuid : ''}`}
               className="w-full h-full border-0"
               title="Patient DICOM Viewer"
             />
