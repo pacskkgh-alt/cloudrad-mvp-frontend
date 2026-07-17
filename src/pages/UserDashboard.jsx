@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { UploadCloud, CheckCircle, Clock, Activity, FileType, MapPin, User, LogOut, Sun, Moon } from 'lucide-react';
+import { UploadCloud, CheckCircle, Clock, Activity, FileType, MapPin, User, LogOut, Sun, Moon, Loader2 } from 'lucide-react';
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
@@ -187,5 +187,4 @@ export default function UserDashboard({ doctor, onLogout }) {
   );
 }
 
-// Ensure Loader2 is imported effectively manually above if missing.
-import { Loader2 } from 'lucide-react';
+
