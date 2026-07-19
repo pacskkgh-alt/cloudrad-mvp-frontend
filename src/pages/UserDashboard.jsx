@@ -62,7 +62,7 @@ export default function UserDashboard({ doctor, onLogout }) {
       setUploading(false);
       setUploadProgress(0);
     }
-  }, []);
+  }, [isAnonymize]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
 
