@@ -2,8 +2,8 @@ import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { 
   Share2, Mail, QrCode, Clock, UploadCloud, MessageSquare, 
-  FileImage, Download, ChevronLeft, ChevronRight,
-  Search, User, Plus, LogOut, Settings, HelpCircle, Moon
+  FileImage, ChevronRight,
+  Search, Plus, LogOut, Settings, HelpCircle, Moon
 } from 'lucide-react';
 
 const CaseTimeline = ({ doctor, onLogout }) => {

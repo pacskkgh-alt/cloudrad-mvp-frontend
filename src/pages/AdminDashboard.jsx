@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, File, Building, LogOut, Sun, Moon, Plus, Trash2, User } from 'lucide-react';
+import { Users, File, Building, LogOut, Plus, Trash2, User } from 'lucide-react';
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_BACKEND_URL || 'https://api.167-233-227-144.nip.io';
