@@ -23,10 +23,6 @@ export default function AdminDashboard({ doctor, onLogout }) {
   const [userForm, setUserForm] = useState({ full_name: '', email: '', password: '', role: 'user', clinic_id: '' });
   const [clinicForm, setClinicForm] = useState({ name: '', address: '', phone_call: '' });
 
-  const toggleDark = () => {
-    // Disabled - Strict PacsBin Dark Mode
-  };
-
   const fetchData = async () => {
     try {
       const p1 = axios.get(`${API_URL}/api/studies`, { headers: getAuthHeaders() });
