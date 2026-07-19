@@ -59,7 +59,7 @@ export default function LoginPage({ onLogin }) {
             <Stethoscope className="w-10 h-10 text-white relative z-10 drop-shadow-md" />
           </div>
           <h1 className="text-4xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-blue-100 to-cyan-200 drop-shadow-sm">
-            CloudRad <span className="font-light text-blue-400">Pro</span>
+            CloudRad <span className="font-light text-blue-400">Access</span>
           </h1>
           <p className="text-gray-400 mt-2 text-sm font-medium tracking-wide">المنصة السحابية المتقدمة لطب الأشعة</p>
         </div>
@@ -76,7 +76,7 @@ export default function LoginPage({ onLogin }) {
 
             <div className="flex items-center justify-center gap-2 mb-8 bg-blue-500/10 text-blue-400 py-2.5 px-4 rounded-xl border border-blue-500/20 shadow-inner">
               <Shield className="w-4 h-4" />
-              <span className="text-xs font-semibold tracking-wider">بوابة مؤمنة بتشفير من طرف إلى طرف</span>
+              <span className="text-xs font-semibold tracking-wider">بوابة دخول موحدة (Simple Access)</span>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6 relative z-10">

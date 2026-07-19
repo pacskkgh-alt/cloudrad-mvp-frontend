@@ -5,6 +5,8 @@ import UserDashboard from './pages/UserDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import PatientPortal from './pages/PatientPortal';
 import LoginPage from './pages/LoginPage';
+import CaseTimeline from './pages/CaseTimeline';
+import PatientViewPage from './pages/PatientViewPage';
 
 function App() {
   const [doctor, setDoctor] = useState(null);
@@ -44,6 +46,7 @@ function App() {
       <Routes>
         {/* Public routes */}
         <Route path="/patient/:token" element={<PatientPortal />} />
+        <Route path="/view/:token" element={<PatientViewPage />} />
         <Route
           path="/login"
           element={
@@ -57,8 +60,8 @@ function App() {
           element={
             doctor ? (
               doctor.role === 'admin' ? <AdminDashboard doctor={doctor} onLogout={handleLogout} /> :
-              doctor.role === 'user' ? <UserDashboard doctor={doctor} onLogout={handleLogout} /> :
-              <Dashboard doctor={doctor} onLogout={handleLogout} />
+              doctor.role === 'user' ? <CaseTimeline doctor={doctor} onLogout={handleLogout} /> :
+              <CaseTimeline doctor={doctor} onLogout={handleLogout} />
             ) : (
               <Navigate to="/login" replace />
             )
