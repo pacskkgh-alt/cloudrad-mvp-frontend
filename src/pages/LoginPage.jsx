@@ -147,14 +147,14 @@ export default function LoginPage({ onLogin }) {
 
         {/* Minimal Text Anchors */}
         <div className="flex flex-col items-center justify-center gap-3.5 text-sm">
-          <a href="#" className="text-gray-400 hover:text-white transition-colors duration-200">
+          <span className="text-gray-400 hover:text-white transition-colors duration-200 cursor-pointer">
             Forgot password?
-          </a>
+          </span>
           <div className="text-gray-500">
             Don't have an account?{' '}
-            <a href="#" className="text-blue-400 hover:text-blue-300 font-medium transition-colors duration-200">
+            <span className="text-blue-400 hover:text-blue-300 font-medium transition-colors duration-200 cursor-pointer">
               Register a new account
-            </a>
+            </span>
           </div>
         </div>
 
