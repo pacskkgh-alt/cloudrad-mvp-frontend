@@ -1,7 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import Dashboard from './pages/Dashboard';
-import UserDashboard from './pages/UserDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import PatientPortal from './pages/PatientPortal';
 import LoginPage from './pages/LoginPage';
