@@ -14,6 +14,7 @@ export default function AdminDashboard({ doctor, onLogout }) {
   const [activeTab, setActiveTab] = useState('overview');
   const [users, setUsers] = useState([]);
   const [clinics, setClinics] = useState([]);
+  const [links, setLinks] = useState([]);
   const [stats, setStats] = useState({ totalStudies: 0 });
 
   const [showUserModal, setShowUserModal] = useState(false);
@@ -32,11 +33,13 @@ export default function AdminDashboard({ doctor, onLogout }) {
       const p1 = axios.get(`${API_URL}/api/studies`, { headers: getAuthHeaders() });
       const p2 = axios.get(`${API_URL}/api/admin/users`, { headers: getAuthHeaders() });
       const p3 = axios.get(`${API_URL}/api/admin/clinics`, { headers: getAuthHeaders() });
+      const p4 = axios.get(`${API_URL}/api/admin/links`, { headers: getAuthHeaders() });
       
-      const [resStudies, resUsers, resClinics] = await Promise.all([p1, p2, p3]);
+      const [resStudies, resUsers, resClinics, resLinks] = await Promise.all([p1, p2, p3, p4]);
       setStats({ totalStudies: resStudies.data.length });
       setUsers(resUsers.data);
       setClinics(resClinics.data);
+      setLinks(resLinks.data);
     } catch (err) {
       console.error(err);
     }
@@ -65,6 +68,25 @@ export default function AdminDashboard({ doctor, onLogout }) {
       fetchData();
     } catch (err) {
       alert(err.response?.data?.detail || "Error deleting user");
+    }
+  };
+
+  const handleToggleUser = async (id) => {
+    try {
+      await axios.put(`${API_URL}/api/admin/users/${id}/toggle-status`, {}, { headers: getAuthHeaders() });
+      fetchData();
+    } catch (err) {
+      alert(err.response?.data?.detail || "Error toggling user status");
+    }
+  };
+
+  const handleRevokeLink = async (id) => {
+    if(!window.confirm('تأكيد إبطال الرابط فوراً؟')) return;
+    try {
+      await axios.put(`${API_URL}/api/admin/links/${id}/revoke`, {}, { headers: getAuthHeaders() });
+      fetchData();
+    } catch (err) {
+      alert(err.response?.data?.detail || "Error revoking link");
     }
   };
 
@@ -110,6 +132,7 @@ export default function AdminDashboard({ doctor, onLogout }) {
               <th className="p-4 font-semibold text-slate-400">الاسم</th>
               <th className="p-4 font-semibold text-slate-400">البريد الإلكتروني</th>
               <th className="p-4 font-semibold text-slate-400">الصلاحية (الدور)</th>
+              <th className="p-4 font-semibold text-slate-400">حالة الحساب</th>
               <th className="p-4 font-semibold text-slate-400">العيادة المرتبطة</th>
               <th className="p-4 font-semibold text-slate-400">الإجراءات</th>
             </tr>
@@ -120,8 +143,12 @@ export default function AdminDashboard({ doctor, onLogout }) {
                 <td className="p-4 font-medium flex items-center gap-3"><User className="w-8 h-8 p-1.5 bg-slate-800 rounded-full text-slate-300" /> {u.full_name}</td>
                 <td className="p-4 text-slate-400">{u.email}</td>
                 <td className="p-4"><span className={`px-3 py-1 rounded-full text-xs font-bold ${u.role === 'admin' ? 'bg-red-500/10 text-red-500' : u.role === 'doctor' ? 'bg-indigo-500/10 text-indigo-400' : 'bg-cyan-500/10 text-cyan-400'}`}>{u.role === 'user' ? 'فني أشعة' : u.role === 'doctor' ? 'طبيب معالج' : 'مدير نظام'}</span></td>
+                <td className="p-4"><span className={`px-3 py-1 rounded-full text-xs font-bold border ${u.is_active ? 'bg-green-500/10 text-green-500 border-green-500/20' : 'bg-red-500/10 text-red-500 border-red-500/20'}`}>{u.is_active ? 'نشط' : 'معطل'}</span></td>
                 <td className="p-4 text-slate-400">{clinics.find(c => c.id === u.clinic_id)?.name || 'غير محدد (الفرع الرئيسي)'}</td>
-                <td className="p-4"><button onClick={() => handleDeleteUser(u.id)} className="p-2 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500/20" title="حذف المستخدم"><Trash2 className="w-4 h-4" /></button></td>
+                <td className="p-4 flex gap-2 justify-end">
+                  <button onClick={() => handleToggleUser(u.id)} className={`p-2 rounded-lg transition-colors ${u.is_active ? 'bg-orange-500/10 text-orange-500 hover:bg-orange-500/20' : 'bg-green-500/10 text-green-500 hover:bg-green-500/20'}`} title={u.is_active ? "تعطيل החשבון" : "تفعيل الحساب"}>{u.is_active ? 'تعطيل' : 'تفعيل'}</button>
+                  <button onClick={() => handleDeleteUser(u.id)} className="p-2 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500/20" title="حذف المستخدم"><Trash2 className="w-4 h-4" /></button>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -173,6 +200,7 @@ export default function AdminDashboard({ doctor, onLogout }) {
            <button onClick={()=>setActiveTab('overview')} className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${activeTab==='overview'?'bg-indigo-500 text-white shadow-lg':'text-slate-400 hover:text-white flex-shrink-0'}`}>نظرة عامة على البيانات</button>
            <button onClick={()=>setActiveTab('users')} className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${activeTab==='users'?'bg-indigo-500 text-white shadow-lg':'text-slate-400 hover:text-white flex-shrink-0'}`}>المستخدمين والأطباء</button>
            <button onClick={()=>setActiveTab('clinics')} className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${activeTab==='clinics'?'bg-indigo-500 text-white shadow-lg':'text-slate-400 hover:text-white flex-shrink-0'}`}>العيادات التابعة</button>
+           <button onClick={()=>setActiveTab('links')} className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${activeTab==='links'?'bg-red-600 text-white shadow-lg':'text-slate-400 hover:text-white flex-shrink-0'}`}>مراقبة الروابط الخاصة</button>
         </div>
 
         <div className="flex items-center gap-4">
@@ -185,6 +213,7 @@ export default function AdminDashboard({ doctor, onLogout }) {
         {activeTab === 'overview' && renderOverview()}
         {activeTab === 'users' && renderUsers()}
         {activeTab === 'clinics' && renderClinics()}
+        {activeTab === 'links' && renderLinks()}
       </div>
 
       {showUserModal && (
