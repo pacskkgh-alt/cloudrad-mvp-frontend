@@ -59,9 +59,19 @@ function App() {
           path="/"
           element={
             doctor ? (
-              doctor.role === 'admin' ? <AdminDashboard doctor={doctor} onLogout={handleLogout} /> :
-              doctor.role === 'user' ? <CaseTimeline doctor={doctor} onLogout={handleLogout} /> :
+              doctor.role === 'admin' ? <Navigate to="/admin" replace /> :
               <CaseTimeline doctor={doctor} onLogout={handleLogout} />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            doctor ? (
+              doctor.role === 'admin' ? <AdminDashboard doctor={doctor} onLogout={handleLogout} /> :
+              <Navigate to="/" replace />
             ) : (
               <Navigate to="/login" replace />
             )

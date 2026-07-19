@@ -10,7 +10,7 @@ function getAuthHeaders() {
 }
 
 export default function AdminDashboard({ doctor, onLogout }) {
-  const [darkMode, setDarkMode] = useState(true);
+  const darkMode = true; // PacsBin aesthetic strict dark mode
   const [activeTab, setActiveTab] = useState('overview');
   const [users, setUsers] = useState([]);
   const [clinics, setClinics] = useState([]);
@@ -24,8 +24,7 @@ export default function AdminDashboard({ doctor, onLogout }) {
   const [clinicForm, setClinicForm] = useState({ name: '', address: '', phone_call: '' });
 
   const toggleDark = () => {
-    setDarkMode(!darkMode);
-    document.documentElement.classList.toggle('dark');
+    // Disabled - Strict PacsBin Dark Mode
   };
 
   const fetchData = async () => {
@@ -33,7 +32,7 @@ export default function AdminDashboard({ doctor, onLogout }) {
       const p1 = axios.get(`${API_URL}/api/studies`, { headers: getAuthHeaders() });
       const p2 = axios.get(`${API_URL}/api/admin/users`, { headers: getAuthHeaders() });
       const p3 = axios.get(`${API_URL}/api/admin/clinics`, { headers: getAuthHeaders() });
-      const p4 = axios.get(`${API_URL}/api/admin/links`, { headers: getAuthHeaders() });
+      const p4 = axios.get(`${API_URL}/api/admin/shares`, { headers: getAuthHeaders() });
       
       const [resStudies, resUsers, resClinics, resLinks] = await Promise.all([p1, p2, p3, p4]);
       setStats({ totalStudies: resStudies.data.length });
@@ -73,7 +72,7 @@ export default function AdminDashboard({ doctor, onLogout }) {
 
   const handleToggleUser = async (id) => {
     try {
-      await axios.put(`${API_URL}/api/admin/users/${id}/toggle-status`, {}, { headers: getAuthHeaders() });
+      await axios.put(`${API_URL}/api/admin/users/${id}/toggle`, {}, { headers: getAuthHeaders() });
       fetchData();
     } catch (err) {
       alert(err.response?.data?.detail || "Error toggling user status");
@@ -81,9 +80,9 @@ export default function AdminDashboard({ doctor, onLogout }) {
   };
 
   const handleRevokeLink = async (id) => {
-    if(!window.confirm('تأكيد إبطال الرابط فوراً؟')) return;
+    if(!window.confirm('تأكيد إبطال الرابط فوراً؟ (Nuke Link)')) return;
     try {
-      await axios.put(`${API_URL}/api/admin/links/${id}/revoke`, {}, { headers: getAuthHeaders() });
+      await axios.put(`${API_URL}/api/admin/shares/${id}/revoke`, {}, { headers: getAuthHeaders() });
       fetchData();
     } catch (err) {
       alert(err.response?.data?.detail || "Error revoking link");
@@ -188,6 +187,42 @@ export default function AdminDashboard({ doctor, onLogout }) {
     </div>
   );
 
+  const renderLinks = () => (
+    <div className={`rounded-3xl border shadow-xl overflow-hidden ${darkMode ? 'bg-[#111827] border-slate-800' : 'bg-white border-slate-200'}`}>
+      <div className="p-6 border-b flex justify-between items-center border-slate-800 border-opacity-50">
+         <h3 className="text-xl font-bold">مراقبة الروابط والمشاركات العالمية</h3>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-right">
+          <thead className={darkMode ? 'bg-slate-800/50' : 'bg-slate-50'}>
+            <tr>
+              <th className="p-4 font-semibold text-slate-400">المريض</th>
+              <th className="p-4 font-semibold text-slate-400">الطبيب المنشئ</th>
+              <th className="p-4 font-semibold text-slate-400">عدد المشاهدات</th>
+              <th className="p-4 font-semibold text-slate-400">تاريخ الانتهاء</th>
+              <th className="p-4 font-semibold text-slate-400">حالة الرابط</th>
+              <th className="p-4 font-semibold text-slate-400">الإجراءات</th>
+            </tr>
+          </thead>
+          <tbody>
+            {links.map(l => (
+              <tr key={l.id} className={`border-b border-opacity-30 ${darkMode ? 'border-slate-700' : 'border-slate-200'}`}>
+                <td className="p-4 font-medium">{l.patient_name}</td>
+                <td className="p-4 text-slate-400">{l.doctor_name}</td>
+                <td className="p-4 text-slate-400">{l.views_count}</td>
+                <td className="p-4 text-slate-400">{l.expires_at ? new Date(l.expires_at).toLocaleString('en-US') : 'دائم'}</td>
+                <td className="p-4"><span className={`px-3 py-1 rounded-full text-xs font-bold border ${l.is_active ? 'bg-green-500/10 text-green-500 border-green-500/20' : 'bg-red-500/10 text-red-500 border-red-500/20'}`}>{l.is_active ? 'نشط' : 'منتهي'}</span></td>
+                <td className="p-4 flex gap-2 justify-end">
+                  {l.is_active && <button onClick={() => handleRevokeLink(l.id)} className="p-2 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500/20 font-bold" title="إبطال الرابط (Nuke)">إبطال Nuke</button>}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+
   return (
     <div className={`min-h-screen flex flex-col ${darkMode ? 'dark bg-[#0a0f1c] text-white' : 'bg-slate-50 text-slate-900'} transition-colors duration-500 font-sans`} dir="rtl">
       <header className={`flex flex-col lg:flex-row justify-between items-center p-5 lg:px-10 backdrop-blur-md sticky top-0 z-40 transition-colors gap-4 ${darkMode ? 'bg-[#0a0f1c]/80 border-b border-white/5' : 'bg-white/80 border-b border-slate-200'}`}>
@@ -196,16 +231,15 @@ export default function AdminDashboard({ doctor, onLogout }) {
           <h1 className="text-xl font-bold border-l pl-4 border-slate-700">CloudRad <span className="font-light text-indigo-400">إدارة النظام المركزية</span></h1>
         </div>
         
-        <div className="flex bg-slate-800/50 p-1.5 rounded-2xl w-full lg:w-auto overflow-x-auto">
-           <button onClick={()=>setActiveTab('overview')} className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${activeTab==='overview'?'bg-indigo-500 text-white shadow-lg':'text-slate-400 hover:text-white flex-shrink-0'}`}>نظرة عامة على البيانات</button>
-           <button onClick={()=>setActiveTab('users')} className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${activeTab==='users'?'bg-indigo-500 text-white shadow-lg':'text-slate-400 hover:text-white flex-shrink-0'}`}>المستخدمين والأطباء</button>
-           <button onClick={()=>setActiveTab('clinics')} className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${activeTab==='clinics'?'bg-indigo-500 text-white shadow-lg':'text-slate-400 hover:text-white flex-shrink-0'}`}>العيادات التابعة</button>
-           <button onClick={()=>setActiveTab('links')} className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${activeTab==='links'?'bg-red-600 text-white shadow-lg':'text-slate-400 hover:text-white flex-shrink-0'}`}>مراقبة الروابط الخاصة</button>
+        <div className="flex bg-[#1f2937] p-1.5 rounded-2xl w-full lg:w-auto overflow-x-auto">
+           <button onClick={()=>setActiveTab('overview')} className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${activeTab==='overview'?'bg-indigo-600 text-white shadow-lg':'text-slate-400 hover:text-white flex-shrink-0'}`}>لوحة القيادة</button>
+           <button onClick={()=>setActiveTab('users')} className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${activeTab==='users'?'bg-indigo-600 text-white shadow-lg':'text-slate-400 hover:text-white flex-shrink-0'}`}>إدارة الموظفين</button>
+           <button onClick={()=>setActiveTab('clinics')} className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${activeTab==='clinics'?'bg-indigo-600 text-white shadow-lg':'text-slate-400 hover:text-white flex-shrink-0'}`}>المراكز والمستشفيات</button>
+           <button onClick={()=>setActiveTab('links')} className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${activeTab==='links'?'bg-rose-600 text-white shadow-lg':'text-slate-400 hover:text-white flex-shrink-0'}`}>مراقبة وتسجيل المشاركات</button>
         </div>
 
         <div className="flex items-center gap-4">
-          <button onClick={toggleDark} className={`p-2.5 rounded-full ${darkMode ? 'bg-slate-800/80 text-yellow-400' : 'bg-white text-slate-600'}`}>{darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}</button>
-          <button onClick={onLogout} className="p-2.5 rounded-full bg-red-500/10 text-red-500 hover:bg-red-500/20" title="خروج"><LogOut className="w-5 h-5" /></button>
+          <button onClick={onLogout} className="p-2.5 rounded-full bg-rose-500/10 text-rose-500 hover:bg-rose-500/20" title="خروج"><LogOut className="w-5 h-5" /></button>
         </div>
       </header>
 
