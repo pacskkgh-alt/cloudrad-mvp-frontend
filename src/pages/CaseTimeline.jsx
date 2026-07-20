@@ -1,5 +1,8 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
+import axios from 'axios';
+
+const API_URL = import.meta.env.VITE_BACKEND_URL || 'https://api.167-233-227-144.nip.io';
 import { 
   Share2, Mail, QrCode, Clock, UploadCloud, MessageSquare, 
   FileImage, ChevronRight,
@@ -11,6 +14,25 @@ const CaseTimeline = ({ doctor, onLogout }) => {
   const [isExtracted, setIsExtracted] = useState(false);
   const [expiry, setExpiry] = useState("7 Days");
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [cases, setCases] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCases = async () => {
+      try {
+        const token = localStorage.getItem('cloudrad_token');
+        const res = await axios.get(`${API_URL}/api/studies`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setCases(res.data);
+      } catch (err) {
+        console.error("Failed to fetch cases", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCases();
+  }, []);
 
   // Simulated Resumable Chunk Upload (Cimar-inspired)
   const onDrop = useCallback((acceptedFiles) => {
@@ -58,7 +80,7 @@ const CaseTimeline = ({ doctor, onLogout }) => {
           <nav className="space-y-1">
             <button className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-md bg-blue-600/10 text-blue-400">
               <span>Cases</span>
-              <span className="bg-blue-600 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">12</span>
+              <span className="bg-blue-600 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">{cases.length}</span>
             </button>
             <button className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-md text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
               <span>Shared with me</span>
@@ -111,9 +133,9 @@ const CaseTimeline = ({ doctor, onLogout }) => {
             
             <div className="flex items-center space-x-3">
               <span className="text-sm font-medium text-gray-500 hidden lg:block mr-2">{userEmail}</span>
-              <button className="text-gray-500 hover:text-white p-1.5 rounded-md hover:bg-gray-800 transition-colors" title="Settings"><Settings size={18}/></button>
-              <button className="text-gray-500 hover:text-white p-1.5 rounded-md hover:bg-gray-800 transition-colors" title="Theme"><Moon size={18}/></button>
-              <button className="text-gray-500 hover:text-white p-1.5 rounded-md hover:bg-gray-800 transition-colors" title="Help"><HelpCircle size={18}/></button>
+              <button className="text-gray-500 hover:text-white p-1.5 rounded-md hover:bg-gray-800 transition-colors" title="Settings" onClick={() => alert("Settings module is coming soon!")}><Settings size={18}/></button>
+              <button className="text-gray-500 hover:text-white p-1.5 rounded-md hover:bg-gray-800 transition-colors" title="Theme" onClick={() => alert("Theme switching is currently disabled.")}><Moon size={18}/></button>
+              <button className="text-gray-500 hover:text-white p-1.5 rounded-md hover:bg-gray-800 transition-colors" title="Help" onClick={() => alert("Help and support documentation will be available here.")}><HelpCircle size={18}/></button>
               <button onClick={onLogout} className="text-rose-500 hover:text-rose-400 p-1.5 rounded-md hover:bg-rose-500/10 ml-1 transition-colors" title="Logout"><LogOut size={18}/></button>
             </div>
           </div>
@@ -143,12 +165,34 @@ const CaseTimeline = ({ doctor, onLogout }) => {
                 <div className="flex items-center gap-1 cursor-pointer hover:text-gray-300">DATE <ChevronRight size={12} className="rotate-90"/></div>
               </div>
               
-              {/* Empty State */}
-              <div className="flex-1 flex flex-col items-center justify-center text-gray-500">
-                <FileImage size={48} className="mb-4 text-gray-800" strokeWidth={1} />
-                <p className="text-lg font-medium text-gray-400">No cases found</p>
-                <p className="text-sm mt-1 text-gray-600">Your uploaded radiological cases will appear here.</p>
-              </div>
+              {/* Empty State / Cases List */}
+              {loading ? (
+                 <div className="flex-1 flex flex-col items-center justify-center text-gray-500">
+                   <p className="text-lg font-medium text-gray-400">Loading cases...</p>
+                 </div>
+              ) : cases.length === 0 ? (
+                <div className="flex-1 flex flex-col items-center justify-center text-gray-500">
+                  <FileImage size={48} className="mb-4 text-gray-800" strokeWidth={1} />
+                  <p className="text-lg font-medium text-gray-400">No cases found</p>
+                  <p className="text-sm mt-1 text-gray-600">Your uploaded radiological cases will appear here.</p>
+                </div>
+              ) : (
+                <div className="flex-1 overflow-y-auto">
+                  {cases.map((c) => (
+                    <div key={c.id} className="grid grid-cols-3 border-b border-gray-800 p-4 text-sm font-medium text-gray-300 hover:bg-gray-800/50 transition-colors cursor-pointer" onClick={() => alert(`Ready to view case ${c.id}: ${c.patient_name}`)}>
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded bg-blue-900/30 text-blue-400 flex items-center justify-center font-bold text-xs">{c.patient_name ? c.patient_name.charAt(0) : '?'}</div>
+                        <div className="flex flex-col">
+                           <span className="text-gray-200">{c.patient_name || 'Unknown Patient'}</span>
+                           <span className="text-xs text-gray-500">{c.patient_id_number || 'N/A'}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center"><span className="px-2 py-1 rounded bg-gray-800 border border-gray-700 text-xs font-bold text-gray-300">{c.modality || 'UNKNOWN'}</span></div>
+                      <div className="flex items-center text-gray-400">{c.study_date ? new Date(c.study_date).toLocaleDateString() : 'N/A'}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
