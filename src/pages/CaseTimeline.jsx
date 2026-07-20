@@ -17,6 +17,11 @@ const CaseTimeline = ({ doctor, onLogout }) => {
   const [cases, setCases] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const [activeTab, setActiveTab] = useState('cases');
+  const [theme, setTheme] = useState('dark');
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showHelpModal, setShowHelpModal] = useState(false);
+
   useEffect(() => {
     const fetchCases = async () => {
       try {
@@ -60,7 +65,7 @@ const CaseTimeline = ({ doctor, onLogout }) => {
   const userEmail = doctor?.email || "demo@cloudrad.app";
 
   return (
-    <div className="min-h-screen bg-[#0b0f19] text-gray-300 font-sans flex overflow-hidden">
+    <div className={`min-h-screen text-gray-300 font-sans flex overflow-hidden transition-colors duration-300 ${theme === 'dark' ? 'bg-[#0b0f19]' : 'bg-[#1f2937]'}`}>
       
       {/* 1. Persistent Left Sidebar */}
       <aside className="w-64 bg-[#0b0f19] border-r border-gray-800 flex flex-col hidden md:flex shrink-0">
@@ -78,13 +83,13 @@ const CaseTimeline = ({ doctor, onLogout }) => {
         {/* Navigation Links */}
         <div className="flex-1 py-6 px-4 space-y-8 overflow-y-auto">
           <nav className="space-y-1">
-            <button className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-md bg-blue-600/10 text-blue-400">
+            <button onClick={() => setActiveTab('cases')} className={`w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-md transition-colors ${activeTab === 'cases' ? 'bg-blue-600/10 text-blue-400' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}>
               <span>Cases</span>
-              <span className="bg-blue-600 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">{cases.length}</span>
+              <span className={`${activeTab === 'cases' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-300'} text-[10px] px-2 py-0.5 rounded-full font-bold`}>{cases.length}</span>
             </button>
-            <button className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-md text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+            <button onClick={() => setActiveTab('shared')} className={`w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-md transition-colors ${activeTab === 'shared' ? 'bg-blue-600/10 text-blue-400' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}>
               <span>Shared with me</span>
-              <span className="bg-gray-800 text-gray-300 text-[10px] px-2 py-0.5 rounded-full font-bold">3</span>
+              <span className={`${activeTab === 'shared' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-300'} text-[10px] px-2 py-0.5 rounded-full font-bold`}>3</span>
             </button>
           </nav>
 
@@ -92,7 +97,7 @@ const CaseTimeline = ({ doctor, onLogout }) => {
           <div>
             <div className="flex items-center justify-between px-3 mb-3 group">
               <span className="text-[10px] font-bold tracking-widest text-gray-500">PLAYLISTS</span>
-              <button className="text-gray-500 hover:text-white transition-colors opacity-0 group-hover:opacity-100"><Plus size={14}/></button>
+              <button onClick={() => prompt('Enter new playlist name:')} className="text-gray-500 hover:text-white transition-colors opacity-0 group-hover:opacity-100"><Plus size={14}/></button>
             </div>
             <div className="px-3 text-sm text-gray-600 italic pb-2">No playlists added</div>
           </div>
@@ -117,9 +122,9 @@ const CaseTimeline = ({ doctor, onLogout }) => {
           <div className="flex items-center gap-8 h-full">
             <h1 className="text-xl font-black text-white tracking-widest uppercase md:hidden hidden sm:flex h-full items-center">CR</h1>
             <nav className="hidden sm:flex items-center space-x-6 text-sm font-medium h-full">
-              <span className="text-white border-b-2 border-blue-500 h-full flex items-center cursor-pointer">Cases</span>
-              <span className="text-gray-400 hover:text-gray-200 h-full flex items-center border-b-2 border-transparent cursor-pointer transition-colors">Assessments</span>
-              <span className="text-gray-400 hover:text-gray-200 h-full flex items-center border-b-2 border-transparent cursor-pointer transition-colors">Account</span>
+              <span onClick={() => setActiveTab('cases')} className={`h-full flex items-center border-b-2 cursor-pointer transition-colors ${activeTab === 'cases' ? 'text-white border-blue-500' : 'text-gray-400 hover:text-gray-200 border-transparent'}`}>Cases</span>
+              <span onClick={() => setActiveTab('assessments')} className={`h-full flex items-center border-b-2 cursor-pointer transition-colors ${activeTab === 'assessments' ? 'text-white border-blue-500' : 'text-gray-400 hover:text-gray-200 border-transparent'}`}>Assessments</span>
+              <span onClick={() => setActiveTab('account')} className={`h-full flex items-center border-b-2 cursor-pointer transition-colors ${activeTab === 'account' ? 'text-white border-blue-500' : 'text-gray-400 hover:text-gray-200 border-transparent'}`}>Account</span>
             </nav>
           </div>
 
@@ -133,9 +138,9 @@ const CaseTimeline = ({ doctor, onLogout }) => {
             
             <div className="flex items-center space-x-3">
               <span className="text-sm font-medium text-gray-500 hidden lg:block mr-2">{userEmail}</span>
-              <button className="text-gray-500 hover:text-white p-1.5 rounded-md hover:bg-gray-800 transition-colors" title="Settings" onClick={() => alert("Settings module is coming soon!")}><Settings size={18}/></button>
-              <button className="text-gray-500 hover:text-white p-1.5 rounded-md hover:bg-gray-800 transition-colors" title="Theme" onClick={() => alert("Theme switching is currently disabled.")}><Moon size={18}/></button>
-              <button className="text-gray-500 hover:text-white p-1.5 rounded-md hover:bg-gray-800 transition-colors" title="Help" onClick={() => alert("Help and support documentation will be available here.")}><HelpCircle size={18}/></button>
+              <button className="text-gray-500 hover:text-white p-1.5 rounded-md hover:bg-gray-800 transition-colors" title="Settings" onClick={() => setShowSettingsModal(true)}><Settings size={18}/></button>
+              <button className="text-gray-500 hover:text-white p-1.5 rounded-md hover:bg-gray-800 transition-colors" title="Theme" onClick={() => setTheme(theme === 'dark' ? 'dim' : 'dark')}><Moon size={18}/></button>
+              <button className="text-gray-500 hover:text-white p-1.5 rounded-md hover:bg-gray-800 transition-colors" title="Help" onClick={() => setShowHelpModal(true)}><HelpCircle size={18}/></button>
               <button onClick={onLogout} className="text-rose-500 hover:text-rose-400 p-1.5 rounded-md hover:bg-rose-500/10 ml-1 transition-colors" title="Logout"><LogOut size={18}/></button>
             </div>
           </div>
@@ -157,40 +162,87 @@ const CaseTimeline = ({ doctor, onLogout }) => {
 
           {/* Main Grid/Table Layout */}
           <div className="flex-1 px-6 pb-6 overflow-hidden flex flex-col">
-            <div className="border border-gray-800 rounded-xl overflow-hidden bg-[#0b0f19] flex-1 flex flex-col shadow-2xl">
-              {/* Table Header */}
-              <div className="grid grid-cols-3 border-b border-gray-800 bg-[#0d1321] p-4 text-[11px] font-bold text-gray-500 tracking-widest shrink-0">
-                <div className="flex items-center gap-1 cursor-pointer hover:text-gray-300">DESCRIPTION <ChevronRight size={12} className="rotate-90"/></div>
-                <div className="flex items-center gap-1 cursor-pointer hover:text-gray-300">MODALITY <ChevronRight size={12} className="rotate-90"/></div>
-                <div className="flex items-center gap-1 cursor-pointer hover:text-gray-300">DATE <ChevronRight size={12} className="rotate-90"/></div>
-              </div>
-              
-              {/* Empty State / Cases List */}
-              {loading ? (
-                 <div className="flex-1 flex flex-col items-center justify-center text-gray-500">
-                   <p className="text-lg font-medium text-gray-400">Loading cases...</p>
-                 </div>
-              ) : cases.length === 0 ? (
-                <div className="flex-1 flex flex-col items-center justify-center text-gray-500">
-                  <FileImage size={48} className="mb-4 text-gray-800" strokeWidth={1} />
-                  <p className="text-lg font-medium text-gray-400">No cases found</p>
-                  <p className="text-sm mt-1 text-gray-600">Your uploaded radiological cases will appear here.</p>
-                </div>
-              ) : (
-                <div className="flex-1 overflow-y-auto">
-                  {cases.map((c) => (
-                    <div key={c.id} className="grid grid-cols-3 border-b border-gray-800 p-4 text-sm font-medium text-gray-300 hover:bg-gray-800/50 transition-colors cursor-pointer" onClick={() => alert(`Ready to view case ${c.id}: ${c.patient_name}`)}>
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded bg-blue-900/30 text-blue-400 flex items-center justify-center font-bold text-xs">{c.patient_name ? c.patient_name.charAt(0) : '?'}</div>
-                        <div className="flex flex-col">
-                           <span className="text-gray-200">{c.patient_name || 'Unknown Patient'}</span>
-                           <span className="text-xs text-gray-500">{c.patient_id_number || 'N/A'}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center"><span className="px-2 py-1 rounded bg-gray-800 border border-gray-700 text-xs font-bold text-gray-300">{c.modality || 'UNKNOWN'}</span></div>
-                      <div className="flex items-center text-gray-400">{c.study_date ? new Date(c.study_date).toLocaleDateString() : 'N/A'}</div>
+            <div className={`border border-gray-800 rounded-xl overflow-hidden ${theme === 'dark' ? 'bg-[#0b0f19]' : 'bg-[#111827]'} flex-1 flex flex-col shadow-2xl`}>
+              {activeTab === 'cases' && (
+                <>
+                  {/* Table Header */}
+                  <div className={`grid grid-cols-3 border-b border-gray-800 ${theme==='dark'?'bg-[#0d1321]':'bg-[#1f2937]'} p-4 text-[11px] font-bold text-gray-500 tracking-widest shrink-0`}>
+                    <div className="flex items-center gap-1 cursor-pointer hover:text-gray-300">DESCRIPTION <ChevronRight size={12} className="rotate-90"/></div>
+                    <div className="flex items-center gap-1 cursor-pointer hover:text-gray-300">MODALITY <ChevronRight size={12} className="rotate-90"/></div>
+                    <div className="flex items-center gap-1 cursor-pointer hover:text-gray-300">DATE <ChevronRight size={12} className="rotate-90"/></div>
+                  </div>
+                  
+                  {loading ? (
+                    <div className="flex-1 flex flex-col items-center justify-center text-gray-500">
+                      <p className="text-lg font-medium text-gray-400">Loading cases...</p>
                     </div>
-                  ))}
+                  ) : cases.length === 0 ? (
+                    <div className="flex-1 flex flex-col items-center justify-center text-gray-500">
+                      <FileImage size={48} className="mb-4 text-gray-800" strokeWidth={1} />
+                      <p className="text-lg font-medium text-gray-400">No cases found</p>
+                      <p className="text-sm mt-1 text-gray-600">Your uploaded radiological cases will appear here.</p>
+                    </div>
+                  ) : (
+                    <div className="flex-1 overflow-y-auto">
+                      {cases.map((c) => (
+                        <div key={c.id} className="grid grid-cols-3 border-b border-gray-800 p-4 text-sm font-medium text-gray-300 hover:bg-gray-800/50 transition-colors cursor-pointer" onClick={() => window.open(`${window.location.origin}/view/${c.id}`, '_blank')}>
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded bg-blue-900/30 text-blue-400 flex items-center justify-center font-bold text-xs">{c.patient_name ? c.patient_name.charAt(0) : '?'}</div>
+                            <div className="flex flex-col">
+                               <span className="text-gray-200">{c.patient_name || 'Unknown Patient'}</span>
+                               <span className="text-xs text-gray-500">{c.patient_id_number || 'N/A'}</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center"><span className="px-2 py-1 rounded bg-gray-800 border border-gray-700 text-xs font-bold text-gray-300">{c.modality || 'UNKNOWN'}</span></div>
+                          <div className="flex items-center text-gray-400">{c.study_date ? new Date(c.study_date).toLocaleDateString() : 'N/A'}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+
+              {activeTab === 'shared' && (
+                <div className="flex-1 flex flex-col items-center justify-center text-gray-500">
+                  <Share2 size={48} className="mb-4 text-gray-800" strokeWidth={1} />
+                  <p className="text-lg font-medium text-gray-400">No Shared Cases</p>
+                  <p className="text-sm mt-1 text-gray-600">Cases shared with you will appear here.</p>
+                </div>
+              )}
+
+              {activeTab === 'assessments' && (
+                <div className="flex-1 flex flex-col items-center justify-center text-gray-500">
+                  <Clock size={48} className="mb-4 text-gray-800" strokeWidth={1} />
+                  <p className="text-lg font-medium text-gray-400">No Pending Assessments</p>
+                  <p className="text-sm mt-1 text-gray-600">Pending tasks and studies requiring reports will appear here.</p>
+                </div>
+              )}
+
+              {activeTab === 'account' && (
+                <div className="flex-1 flex flex-col p-8">
+                  <h2 className="text-2xl font-bold text-white mb-6">Account Profile</h2>
+                  <div className="bg-[#0b0f19] border border-gray-800 rounded-xl p-6 max-w-2xl">
+                    <div className="flex items-center gap-6 mb-8 border-b border-gray-800 pb-6">
+                      <div className="w-20 h-20 rounded-full bg-blue-600 flex items-center justify-center text-white text-3xl font-bold shadow-lg">
+                        {userName.charAt(0)}
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-bold text-white">{userName}</h3>
+                        <p className="text-gray-400">{userEmail}</p>
+                        <span className="inline-block mt-2 px-2 py-1 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-xs font-bold rounded uppercase tracking-wider">Active</span>
+                      </div>
+                    </div>
+                    <div className="space-y-4">
+                       <div className="grid grid-cols-3 text-sm border-b border-gray-800 pb-2">
+                         <span className="text-gray-500 font-bold">Role</span>
+                         <span className="col-span-2 text-gray-200 uppercase">{doctor?.role || 'Doctor'}</span>
+                       </div>
+                       <div className="grid grid-cols-3 text-sm pb-2">
+                         <span className="text-gray-500 font-bold">Clinic Identifier</span>
+                         <span className="col-span-2 text-gray-200">{doctor?.clinic_id || 'System Base'}</span>
+                       </div>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -284,11 +336,11 @@ const CaseTimeline = ({ doctor, onLogout }) => {
                 <div>
                   <h4 className="text-[11px] font-bold text-gray-500 mb-4 flex items-center gap-2 tracking-widest uppercase"><Share2 size={14}/> Collaboration & Sharing</h4>
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-                    <a href={`https://wa.me/?text=Hello ${patientData.name}, your ${patientData.modality} study is ready. View it here: https://cloudrad.local/view/123`} target="_blank" rel="noreferrer" className="flex flex-col items-center justify-center p-4 h-full rounded-lg bg-gray-900/50 text-gray-300 hover:bg-[#25D366]/10 hover:text-[#25D366] hover:border-[#25D366]/30 transition-all border border-gray-800 font-semibold text-sm group">
+                    <a href={`https://wa.me/?text=${encodeURIComponent(`Hello ${patientData.name}, your ${patientData.modality} study is ready. View it here: ${window.location.origin}/view/${patientData.id}`)}`} target="_blank" rel="noreferrer" className="flex flex-col items-center justify-center p-4 h-full rounded-lg bg-gray-900/50 text-gray-300 hover:bg-[#25D366]/10 hover:text-[#25D366] hover:border-[#25D366]/30 transition-all border border-gray-800 font-semibold text-sm group">
                       <MessageSquare size={20} className="mb-2 text-gray-500 group-hover:text-[#25D366] transition-colors" />
                       WhatsApp
                     </a>
-                    <a href={`mailto:?subject=Your Radiology Study is Ready&body=Hello ${patientData.name}, your ${patientData.modality} study is ready.%0D%0AView securely: https://cloudrad.local/view/123`} className="flex flex-col items-center justify-center p-4 h-full rounded-lg bg-gray-900/50 text-gray-300 hover:bg-blue-500/10 hover:text-blue-400 hover:border-blue-500/30 transition-all border border-gray-800 font-semibold text-sm group">
+                    <a href={`mailto:?subject=Your Radiology Study is Ready&body=${encodeURIComponent(`Hello ${patientData.name}, your ${patientData.modality} study is ready.\nView securely: ${window.location.origin}/view/${patientData.id}`)}`} className="flex flex-col items-center justify-center p-4 h-full rounded-lg bg-gray-900/50 text-gray-300 hover:bg-blue-500/10 hover:text-blue-400 hover:border-blue-500/30 transition-all border border-gray-800 font-semibold text-sm group">
                       <Mail size={20} className="mb-2 text-gray-500 group-hover:text-blue-400 transition-colors" />
                       Email Link
                     </a>
@@ -315,6 +367,50 @@ const CaseTimeline = ({ doctor, onLogout }) => {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Settings Modal */}
+      {showSettingsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className={`w-full max-w-md ${theme === 'dark' ? 'bg-[#111827]' : 'bg-[#1f2937]'} border border-gray-800 p-8 rounded-2xl shadow-2xl relative`}>
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-white flex items-center gap-2"><Settings size={20}/> User Settings</h3>
+              <button onClick={() => setShowSettingsModal(false)} className="text-gray-400 hover:text-white">&times;</button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                 <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Display Name</label>
+                 <input type="text" defaultValue={userName} className="w-full bg-[#0b0f19] border border-gray-800 rounded p-3 text-white focus:border-blue-500 outline-none" />
+              </div>
+              <div>
+                 <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Email Notifications</label>
+                 <select className="w-full bg-[#0b0f19] border border-gray-800 rounded p-3 text-white focus:border-blue-500 outline-none">
+                    <option>All events</option>
+                    <option>Urgent only</option>
+                    <option>None</option>
+                 </select>
+              </div>
+              <button onClick={() => {alert('Preferences saved'); setShowSettingsModal(false);}} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg shadow-lg mt-4 transition-colors">Save Changes</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Help Modal */}
+      {showHelpModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className={`w-full max-w-md ${theme === 'dark' ? 'bg-[#111827]' : 'bg-[#1f2937]'} border border-gray-800 p-8 rounded-2xl shadow-2xl relative`}>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold text-white flex items-center gap-2"><HelpCircle size={20}/> Help & Support</h3>
+              <button onClick={() => setShowHelpModal(false)} className="text-gray-400 hover:text-white">&times;</button>
+            </div>
+            <p className="text-sm text-gray-400 mb-6">If you need technical assistance with CloudRad PACS, you can access the documentation or contact our 24/7 technical team.</p>
+            <div className="space-y-3">
+              <a href={`mailto:tech@cloudrad.com`} className="w-full bg-gray-800 hover:bg-gray-700 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-colors"><Mail size={16}/> Email tech@cloudrad.com</a>
+              <button onClick={() => setShowHelpModal(false)} className="w-full border border-gray-700 hover:bg-gray-800 text-white font-bold py-3 rounded-lg transition-colors">Close</button>
+            </div>
           </div>
         </div>
       )}
