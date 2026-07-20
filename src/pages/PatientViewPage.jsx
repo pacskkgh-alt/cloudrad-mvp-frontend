@@ -170,7 +170,7 @@ export default function PatientViewPage() {
             <h3 className="text-lg font-bold mb-2">High-Res Imaging</h3>
             <p className="text-sm text-gray-400 mb-6">Access the full diagnostic quality imagery via OHIF viewer.</p>
             <a 
-              href={`${PACS_URL}/osimis-viewer/app/index.html${studyInfo?.orthanc_study_uuid ? '?study=' + studyInfo.orthanc_study_uuid : ''}`}
+              href={`${PACS_URL}/app/explorer.html${studyInfo?.orthanc_study_uuid ? '#study?uuid=' + studyInfo.orthanc_study_uuid : ''}`}
               target="_blank" 
               rel="noopener"
               className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-3 rounded-lg font-bold shadow-lg transition-colors border border-blue-400"
@@ -188,7 +188,7 @@ export default function PatientViewPage() {
              </h2>
              {/* Show WebPACS link strictly on mobile to compensate for no right-panel */}
              <a 
-                href={`${PACS_URL}/osimis-viewer/app/index.html${studyInfo?.orthanc_study_uuid ? '?study=' + studyInfo.orthanc_study_uuid : ''}`}
+                href={`${PACS_URL}/app/explorer.html${studyInfo?.orthanc_study_uuid ? '#study?uuid=' + studyInfo.orthanc_study_uuid : ''}`}
                 target="_blank" 
                 rel="noopener"
                 className="md:hidden flex items-center justify-center gap-1 text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full"
