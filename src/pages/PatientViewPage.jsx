@@ -13,6 +13,7 @@ export default function PatientViewPage() {
   const [report, setReport] = useState('');
   const [loading, setLoading] = useState(true);
   const [errorStatus, setErrorStatus] = useState(null);
+  const [passcode, setPasscode] = useState('');
 
   useEffect(() => {
     verifyToken();
@@ -47,6 +48,28 @@ export default function PatientViewPage() {
     }
   };
 
+  const submitPasscode = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setErrorStatus(null);
+    try {
+      const res = await axios.post(`${API_URL}/api/links/${token}/verify`, { passcode });
+      // If still requires passcode, it means it's incorrect (401 handled by catch)
+      setStudyInfo(res.data);
+      try {
+        const reportRes = await axios.get(`${API_URL}/api/reports/${res.data.study_id}?share_token=${token}`);
+        setReport(reportRes.data.report_content || '');
+      } catch {
+        setReport('<p>No diagnostic report is available for this study yet. Please check back later.</p>');
+      }
+      setLoading(false);
+    } catch (err) {
+      setErrorStatus('REQUIRES_PASSCODE');
+      alert("Incorrect passcode");
+      setLoading(false);
+    }
+  };
+
   // Simplified PDF Download handler
   const handleDownload = () => window.print();
 
@@ -68,6 +91,25 @@ export default function PatientViewPage() {
           </div>
           <h2 className="text-2xl font-bold text-gray-800 mb-2">Access Denied</h2>
           <p className="text-gray-500 font-medium">This secure link has expired for patient privacy. Please contact your healthcare provider to generate a new link.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Passcode Gate Screen
+  if (errorStatus === 'REQUIRES_PASSCODE') {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+        <div className="bg-white rounded-2xl shadow-lg p-10 max-w-md w-full text-center border border-gray-100">
+          <div className="mx-auto w-16 h-16 bg-blue-100 text-blue-500 rounded-full flex items-center justify-center mb-6">
+             <ShieldAlert size={32} />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Restricted Access</h2>
+          <p className="text-gray-500 font-medium mb-6">This patient medical record requires a passcode to proceed.</p>
+          <form onSubmit={submitPasscode} className="space-y-4">
+             <input type="password" value={passcode} onChange={e=>setPasscode(e.target.value)} required placeholder="Enter Passcode..." className="w-full border-gray-200 bg-gray-50 text-gray-900 rounded-xl p-3 border focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all font-semibold" />
+             <button type="submit" className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 rounded-xl shadow-md transition-colors">Decrypt & Open Case</button>
+          </form>
         </div>
       </div>
     );
