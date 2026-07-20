@@ -172,7 +172,7 @@ export default function PatientViewPage() {
             <a 
               href={`${PACS_URL}/osimis-viewer/app/index.html${studyInfo?.orthanc_study_uuid ? '?study=' + studyInfo.orthanc_study_uuid : ''}`}
               target="_blank" 
-              rel="noreferrer"
+              rel="noopener"
               className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-3 rounded-lg font-bold shadow-lg transition-colors border border-blue-400"
             >
               Open WebPACS <ExternalLink size={16} />
@@ -190,7 +190,7 @@ export default function PatientViewPage() {
              <a 
                 href={`${PACS_URL}/osimis-viewer/app/index.html${studyInfo?.orthanc_study_uuid ? '?study=' + studyInfo.orthanc_study_uuid : ''}`}
                 target="_blank" 
-                rel="noreferrer"
+                rel="noopener"
                 className="md:hidden flex items-center justify-center gap-1 text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full"
              >
                Open OHIF <ExternalLink size={12} />
