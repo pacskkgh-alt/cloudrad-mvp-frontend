@@ -6,7 +6,7 @@ const API_URL = import.meta.env.VITE_BACKEND_URL || 'https://api.167-233-227-144
 import { 
   Share2, Mail, QrCode, Clock, UploadCloud, MessageSquare, 
   FileImage, ChevronRight,
-  Search, Plus, LogOut, Settings, HelpCircle, Moon
+  Search, Plus, LogOut, Settings, HelpCircle, Moon, Trash2, ShieldAlert, Check, Copy, Link as LinkIcon
 } from 'lucide-react';
 
 const CaseTimeline = ({ doctor, onLogout }) => {
@@ -22,43 +22,106 @@ const CaseTimeline = ({ doctor, onLogout }) => {
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
 
+  const [patientData, setPatientData] = useState(null);
+  const [linkPasscode, setLinkPasscode] = useState('');
+  const [generatedToken, setGeneratedToken] = useState(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [copiedKey, setCopiedKey] = useState(false);
+
+  const fetchCases = async () => {
+    try {
+      const token = localStorage.getItem('cloudrad_token');
+      const res = await axios.get(`${API_URL}/api/studies`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setCases(res.data);
+    } catch (err) {
+      console.error("Failed to fetch cases", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchCases = async () => {
-      try {
-        const token = localStorage.getItem('cloudrad_token');
-        const res = await axios.get(`${API_URL}/api/studies`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setCases(res.data);
-      } catch (err) {
-        console.error("Failed to fetch cases", err);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchCases();
   }, []);
 
-  // Simulated Resumable Chunk Upload (Cimar-inspired)
-  const onDrop = useCallback((acceptedFiles) => {
-    console.log("Accepted files:", acceptedFiles);
-    setUploadProgress(10);
-    const interval = setInterval(() => {
-      setUploadProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setIsExtracted(true);
-          return 100;
-        }
-        return prev + 15;
+  const onDrop = useCallback(async (acceptedFiles) => {
+    if (acceptedFiles.length === 0) return;
+    try {
+      setUploadProgress(0);
+      setGeneratedToken(null);
+      setLinkPasscode('');
+      const token = localStorage.getItem('cloudrad_token');
+      const formData = new FormData();
+      formData.append('file', acceptedFiles[0]);
+      
+      const res = await axios.post(`${API_URL}/api/upload`, formData, {
+        headers: { Authorization: `Bearer ${token}` },
+        onUploadProgress: (pe) => setUploadProgress(Math.round((pe.loaded * 100) / pe.total))
       });
-    }, 400);
+      setUploadProgress(100);
+      setPatientData({
+         name: res.data.metadata.patient_name || 'Unknown Patient',
+         id: res.data.study_id,
+         age: res.data.metadata.patient_age || '?',
+         sex: typeof res.data.metadata.patient_gender === 'string' ? res.data.metadata.patient_gender.charAt(0) : 'U',
+         modality: res.data.metadata.modality || 'UNKNOWN',
+         studyDate: res.data.metadata.study_date ? new Date(res.data.metadata.study_date).toLocaleDateString() : 'N/A'
+      });
+      setIsExtracted(true);
+      fetchCases();
+    } catch (err) {
+      alert(err.response?.data?.detail || "Upload failed");
+      setUploadProgress(0);
+      setIsExtracted(false);
+    }
   }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
 
-  const patientData = {
-    name: "John Doe", id: "PT-849201", age: "45", sex: "M", modality: "MRI Brain", studyDate: "2026-07-19"
+  const handleDiscard = async () => {
+      if(!window.confirm("Delete this case from the database permanently?")) return;
+      try {
+         const token = localStorage.getItem('cloudrad_token');
+         await axios.delete(`${API_URL}/api/studies/${patientData.id}`, {
+            headers: { Authorization: `Bearer ${token}` }
+         });
+         setShowUploadModal(false);
+         setIsExtracted(false);
+         setPatientData(null);
+         fetchCases();
+      } catch(err) {
+         alert("Delete Failed: " + (err.response?.data?.detail || err.message));
+      }
+  };
+
+  const generateLink = async () => {
+    setIsGenerating(true);
+    try {
+       const token = localStorage.getItem('cloudrad_token');
+       let days = 7;
+       if (expiry === "14 Days Activity") days = 14;
+       if (expiry === "Close Immediately") days = 0;
+       
+       const res = await axios.post(`${API_URL}/api/links/`, {
+          study_id: patientData.id,
+          duration_days: days,
+          passcode: linkPasscode || null
+       }, { headers: { Authorization: `Bearer ${token}` }});
+       setGeneratedToken(res.data.token);
+    } catch(err) {
+       alert("Error creating link: " + (err.response?.data?.detail || err.message));
+    } finally {
+       setIsGenerating(false);
+    }
+  };
+
+  const copyToClipboard = () => {
+     if(!generatedToken) return;
+     navigator.clipboard.writeText(`${window.location.origin}/view/${generatedToken}`);
+     setCopiedKey(true);
+     setTimeout(()=>setCopiedKey(false), 2000);
   };
 
   const userName = doctor?.name || "Dr. Demo";
@@ -334,36 +397,60 @@ const CaseTimeline = ({ doctor, onLogout }) => {
                 
                 {/* PostDICOM Inspired Flexible Sharing Panel */}
                 <div>
-                  <h4 className="text-[11px] font-bold text-gray-500 mb-4 flex items-center gap-2 tracking-widest uppercase"><Share2 size={14}/> Collaboration & Sharing</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-                    <a href={`https://wa.me/?text=${encodeURIComponent(`Hello ${patientData.name}, your ${patientData.modality} study is ready. View it here: ${window.location.origin}/view/${patientData.id}`)}`} target="_blank" rel="noreferrer" className="flex flex-col items-center justify-center p-4 h-full rounded-lg bg-gray-900/50 text-gray-300 hover:bg-[#25D366]/10 hover:text-[#25D366] hover:border-[#25D366]/30 transition-all border border-gray-800 font-semibold text-sm group">
-                      <MessageSquare size={20} className="mb-2 text-gray-500 group-hover:text-[#25D366] transition-colors" />
-                      WhatsApp
-                    </a>
-                    <a href={`mailto:?subject=Your Radiology Study is Ready&body=${encodeURIComponent(`Hello ${patientData.name}, your ${patientData.modality} study is ready.\nView securely: ${window.location.origin}/view/${patientData.id}`)}`} className="flex flex-col items-center justify-center p-4 h-full rounded-lg bg-gray-900/50 text-gray-300 hover:bg-blue-500/10 hover:text-blue-400 hover:border-blue-500/30 transition-all border border-gray-800 font-semibold text-sm group">
-                      <Mail size={20} className="mb-2 text-gray-500 group-hover:text-blue-400 transition-colors" />
-                      Email Link
-                    </a>
-                    <button className="flex flex-col items-center justify-center p-4 h-full rounded-lg bg-gray-900/50 text-gray-300 hover:bg-gray-800 hover:text-white transition-all border border-gray-800 font-semibold text-sm group">
-                      <QrCode size={20} className="mb-2 text-gray-500 group-hover:text-white transition-colors" />
-                      Print Badge
-                    </button>
-                    <div className="h-full flex flex-col justify-end">
-                      <label className="block text-[10px] font-bold text-gray-500 mb-2 uppercase tracking-widest pl-1">Expirable Token</label>
-                      <div className="relative">
-                        <select 
-                          value={expiry} 
-                          onChange={(e) => setExpiry(e.target.value)}
-                          className="w-full bg-gray-900 border border-gray-800 text-gray-300 p-3.5 rounded-lg appearance-none text-sm focus:outline-none focus:border-blue-500 font-semibold transition-colors shadow-inner"
-                        >
-                          <option>7 Days Activity</option>
-                          <option>14 Days Activity</option>
-                          <option>Close Immediately</option>
-                        </select>
-                        <Clock size={16} className="absolute right-4 top-4 text-gray-600" pointerEvents="none"/>
-                      </div>
-                    </div>
+                  <div className="flex justify-between items-center mb-4">
+                     <h4 className="text-[11px] font-bold text-gray-500 flex items-center gap-2 tracking-widest uppercase"><Share2 size={14}/> Collaboration & Sharing</h4>
+                     <button onClick={handleDiscard} className="text-rose-500 hover:text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 px-3 py-1.5 rounded text-xs font-bold transition-colors flex items-center gap-2"><Trash2 size={14}/> Discard Case</button>
                   </div>
+                  
+                  {!generatedToken ? (
+                     <div className="bg-gray-900/50 border border-gray-800 p-6 rounded-xl flex flex-col items-center justify-center max-w-xl mx-auto space-y-4">
+                        <div className="flex w-full gap-4">
+                           <div className="flex-1 relative">
+                              <select 
+                                 value={expiry} 
+                                 onChange={(e) => setExpiry(e.target.value)}
+                                 className="w-full bg-[#0b0f19] border border-gray-700 text-gray-300 p-3.5 rounded-lg appearance-none text-sm focus:outline-none focus:border-blue-500 font-semibold"
+                              >
+                                 <option>7 Days Activity</option>
+                                 <option>14 Days Activity</option>
+                                 <option>Close Immediately</option>
+                              </select>
+                              <Clock size={16} className="absolute right-4 top-4 text-gray-600" pointerEvents="none"/>
+                              <label className="absolute -top-2 left-3 bg-[#0b0f19] px-1 text-[10px] uppercase font-bold text-gray-500">Token Expiry</label>
+                           </div>
+                           <div className="flex-1 relative">
+                              <input 
+                                 type="text" 
+                                 value={linkPasscode}
+                                 onChange={(e) => setLinkPasscode(e.target.value)}
+                                 placeholder="Optional Passcode"
+                                 className="w-full bg-[#0b0f19] border border-gray-700 text-gray-300 p-3.5 rounded-lg text-sm focus:outline-none focus:border-blue-500 font-semibold"
+                              />
+                              <ShieldAlert size={16} className="absolute right-4 top-4 text-gray-600" pointerEvents="none"/>
+                              <label className="absolute -top-2 left-3 bg-[#0b0f19] px-1 text-[10px] uppercase font-bold text-gray-500">Access Control</label>
+                           </div>
+                        </div>
+                        <button onClick={generateLink} disabled={isGenerating} className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold p-3.5 rounded-lg shadow-lg transition-colors flex items-center justify-center gap-2">
+                           {isGenerating ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <LinkIcon size={18}/>}
+                           Save Case & Generate Secure Link
+                        </button>
+                     </div>
+                  ) : (
+                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <button onClick={copyToClipboard} className={`flex flex-col items-center justify-center p-4 h-full rounded-lg transition-all border font-semibold text-sm group ${copiedKey ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-blue-600 border-blue-500 text-white hover:bg-blue-500 shadow-lg'}`}>
+                           {copiedKey ? <Check size={20} className="mb-2" /> : <Copy size={20} className="mb-2" />}
+                           {copiedKey ? 'Link Copied!' : 'Copy Secure Link'}
+                        </button>
+                        <a href={`https://wa.me/?text=${encodeURIComponent(`Hello ${patientData.name}, your ${patientData.modality} study is ready. View it here: ${window.location.origin}/view/${generatedToken} ${linkPasscode ? `(Passcode: ${linkPasscode})` : ''}`)}`} target="_blank" rel="noreferrer" className="flex flex-col items-center justify-center p-4 h-full rounded-lg bg-gray-900/50 text-gray-300 hover:bg-[#25D366]/10 hover:text-[#25D366] hover:border-[#25D366]/30 transition-all border border-gray-800 font-semibold text-sm group">
+                           <MessageSquare size={20} className="mb-2 text-gray-500 group-hover:text-[#25D366] transition-colors" />
+                           WhatsApp
+                        </a>
+                        <a href={`mailto:?subject=Your Radiology Study is Ready&body=${encodeURIComponent(`Hello ${patientData.name}, your ${patientData.modality} study is ready.\nView securely: ${window.location.origin}/view/${generatedToken} \n${linkPasscode ? `(Passcode: ${linkPasscode})` : ''}`)}`} className="flex flex-col items-center justify-center p-4 h-full rounded-lg bg-gray-900/50 text-gray-300 hover:bg-blue-500/10 hover:text-blue-400 hover:border-blue-500/30 transition-all border border-gray-800 font-semibold text-sm group">
+                           <Mail size={20} className="mb-2 text-gray-500 group-hover:text-blue-400 transition-colors" />
+                           Email Link
+                        </a>
+                     </div>
+                  )}
                 </div>
               </div>
             )}
