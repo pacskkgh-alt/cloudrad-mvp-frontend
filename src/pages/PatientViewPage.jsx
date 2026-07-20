@@ -199,14 +199,19 @@ export default function PatientViewPage() {
 
           <div className="relative group">
             <div className="flex gap-4 overflow-x-auto pb-4 snap-x hide-scrollbar">
-              {/* Simulated Snapshots */}
-              {[1,2,3,4,5,6].map(frame => (
-                <div key={frame} className="snap-center shrink-0 w-64 h-64 bg-black rounded-xl overflow-hidden relative shadow-md border-2 border-transparent hover:border-blue-500 transition-colors cursor-pointer flex items-center justify-center">
-                  {/* Placeholder SVG simulating DICOM snapshot */}
-                  <svg className="w-16 h-16 text-gray-800" fill="currentColor" viewBox="0 0 24 24"><path d="M4 4h16v16H4V4zm2 2v12h12V6H6zm3 3h6v6H9V9z"/></svg>
-                  <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-sm text-white px-2 py-1 rounded text-xs font-bold font-mono">IMG {frame}/6</div>
+              {/* Real Orthanc Previews */}
+              {studyInfo?.instances?.slice(0, 6).map((instanceId, idx) => (
+                <div key={instanceId} className="snap-center shrink-0 w-64 h-64 bg-black rounded-xl overflow-hidden relative shadow-md border-2 border-transparent hover:border-blue-500 transition-colors cursor-pointer flex items-center justify-center">
+                  <img src={`${PACS_URL}/instances/${instanceId}/preview`} alt="DICOM Frame" className="w-full h-full object-contain" />
+                  <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-sm text-white px-2 py-1 rounded text-xs font-bold font-mono">IMG {idx + 1}/{Math.min(6, studyInfo.instances.length)}</div>
                 </div>
               ))}
+              {(!studyInfo?.instances || studyInfo.instances.length === 0) && (
+                <div className="snap-center shrink-0 w-64 h-64 bg-gray-900 rounded-xl overflow-hidden relative shadow-md text-gray-600 font-bold flex flex-col items-center justify-center text-sm border border-gray-800">
+                  <ImageIcon size={32} className="mb-2 opacity-30" />
+                  No visual previews available
+                </div>
+              )}
             </div>
             
             {/* Desktop Carousel Controls */}
