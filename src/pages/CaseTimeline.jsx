@@ -21,6 +21,7 @@ const CaseTimeline = ({ doctor, onLogout }) => {
   const [theme, setTheme] = useState('dark');
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   const [patientData, setPatientData] = useState(null);
   const [linkPasscode, setLinkPasscode] = useState('');
@@ -67,7 +68,8 @@ const CaseTimeline = ({ doctor, onLogout }) => {
          age: res.data.metadata.patient_age || '?',
          sex: typeof res.data.metadata.patient_gender === 'string' ? res.data.metadata.patient_gender.charAt(0) : 'U',
          modality: res.data.metadata.modality || 'UNKNOWN',
-         studyDate: res.data.metadata.study_date ? new Date(res.data.metadata.study_date).toLocaleDateString() : 'N/A'
+         studyDate: res.data.metadata.study_date ? new Date(res.data.metadata.study_date).toLocaleDateString() : 'N/A',
+         instances_count: res.data.metadata.instances_count || 0
       });
       setIsExtracted(true);
       fetchCases();
@@ -94,6 +96,30 @@ const CaseTimeline = ({ doctor, onLogout }) => {
       } catch(err) {
          alert("Delete Failed: " + (err.response?.data?.detail || err.message));
       }
+  };
+
+  const deleteStudy = async (studyId) => {
+      if(!window.confirm("Are you sure you want to delete this study? This action cannot be undone.")) return;
+      try {
+         const token = localStorage.getItem('cloudrad_token');
+         await axios.delete(`${API_URL}/api/studies/${studyId}`, {
+            headers: { Authorization: `Bearer ${token}` }
+         });
+         fetchCases();
+      } catch(err) {
+         alert("Delete Failed: " + (err.response?.data?.detail || err.message));
+      }
+  };
+
+  const openShareModal = (study) => {
+      setPatientData({
+         id: study.id,
+         name: study.patient_name || 'Unknown Patient',
+         modality: study.modality || 'UNKNOWN'
+      });
+      setGeneratedToken(null);
+      setLinkPasscode('');
+      setShowShareModal(true);
   };
 
   const generateLink = async () => {
@@ -229,10 +255,13 @@ const CaseTimeline = ({ doctor, onLogout }) => {
               {activeTab === 'cases' && (
                 <>
                   {/* Table Header */}
-                  <div className={`grid grid-cols-3 border-b border-gray-800 ${theme==='dark'?'bg-[#0d1321]':'bg-[#1f2937]'} p-4 text-[11px] font-bold text-gray-500 tracking-widest shrink-0`}>
-                    <div className="flex items-center gap-1 cursor-pointer hover:text-gray-300">DESCRIPTION <ChevronRight size={12} className="rotate-90"/></div>
-                    <div className="flex items-center gap-1 cursor-pointer hover:text-gray-300">MODALITY <ChevronRight size={12} className="rotate-90"/></div>
-                    <div className="flex items-center gap-1 cursor-pointer hover:text-gray-300">DATE <ChevronRight size={12} className="rotate-90"/></div>
+                  <div className={`grid grid-cols-12 border-b border-gray-800 ${theme==='dark'?'bg-[#0d1321]':'bg-[#1f2937]'} p-4 text-[11px] font-bold text-gray-500 tracking-widest shrink-0`}>
+                    <div className="col-span-3 flex items-center gap-1 cursor-pointer hover:text-gray-300">DESCRIPTION <ChevronRight size={12} className="rotate-90"/></div>
+                    <div className="col-span-2 flex items-center gap-1 cursor-pointer hover:text-gray-300">MODALITY <ChevronRight size={12} className="rotate-90"/></div>
+                    <div className="col-span-2 flex items-center gap-1 cursor-pointer hover:text-gray-300">IMAGES <ChevronRight size={12} className="rotate-90"/></div>
+                    <div className="col-span-2 flex items-center gap-1 cursor-pointer hover:text-gray-300">REPORT <ChevronRight size={12} className="rotate-90"/></div>
+                    <div className="col-span-2 flex items-center gap-1 cursor-pointer hover:text-gray-300">DATE <ChevronRight size={12} className="rotate-90"/></div>
+                    <div className="col-span-1 flex items-center gap-1 cursor-pointer hover:text-gray-300 justify-end">ACTIONS</div>
                   </div>
                   
                   {loading ? (
@@ -248,16 +277,40 @@ const CaseTimeline = ({ doctor, onLogout }) => {
                   ) : (
                     <div className="flex-1 overflow-y-auto">
                       {cases.map((c) => (
-                        <div key={c.id} className="grid grid-cols-3 border-b border-gray-800 p-4 text-sm font-medium text-gray-300 hover:bg-gray-800/50 transition-colors cursor-pointer" onClick={() => window.open(`${window.location.origin}/view/${c.id}`, '_blank')}>
-                          <div className="flex items-center gap-3">
+                        <div key={c.id} className="grid grid-cols-12 border-b border-gray-800 p-4 text-sm font-medium text-gray-300 hover:bg-gray-800/50 transition-colors cursor-pointer group">
+                          <div className="col-span-3 flex items-center gap-3" onClick={() => window.open(`${window.location.origin}/view/${c.id}`, '_blank')}>
                             <div className="w-8 h-8 rounded bg-blue-900/30 text-blue-400 flex items-center justify-center font-bold text-xs">{c.patient_name ? c.patient_name.charAt(0) : '?'}</div>
                             <div className="flex flex-col">
                                <span className="text-gray-200">{c.patient_name || 'Unknown Patient'}</span>
                                <span className="text-xs text-gray-500">{c.patient_id_number || 'N/A'}</span>
                             </div>
                           </div>
-                          <div className="flex items-center"><span className="px-2 py-1 rounded bg-gray-800 border border-gray-700 text-xs font-bold text-gray-300">{c.modality || 'UNKNOWN'}</span></div>
-                          <div className="flex items-center text-gray-400">{c.study_date ? new Date(c.study_date).toLocaleDateString() : 'N/A'}</div>
+                          
+                          <div className="col-span-2 flex items-center" onClick={() => window.open(`${window.location.origin}/view/${c.id}`, '_blank')}>
+                            <span className="px-2 py-1 rounded bg-gray-800 border border-gray-700 text-xs font-bold text-gray-300">{c.modality || 'UNKNOWN'}</span>
+                          </div>
+                          
+                          <div className="col-span-2 flex items-center gap-2" onClick={() => window.open(`${window.location.origin}/view/${c.id}`, '_blank')}>
+                            <FileImage size={14} className="text-gray-500" />
+                            <span>{c.instances_count || 0}</span>
+                          </div>
+                          
+                          <div className="col-span-2 flex items-center" onClick={() => window.open(`${window.location.origin}/view/${c.id}`, '_blank')}>
+                            {c.has_report ? (
+                              <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-bold flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>Report Ready</span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded bg-gray-800 text-gray-500 border border-gray-700 text-xs font-bold flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-gray-500"></span>No Report</span>
+                            )}
+                          </div>
+                          
+                          <div className="col-span-2 flex items-center text-gray-400" onClick={() => window.open(`${window.location.origin}/view/${c.id}`, '_blank')}>
+                            {c.study_date ? new Date(c.study_date).toLocaleDateString() : 'N/A'}
+                          </div>
+                          
+                          <div className="col-span-1 flex items-center justify-end gap-2">
+                            <button onClick={(e) => { e.stopPropagation(); openShareModal(c); }} className="p-1.5 text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 rounded transition-colors" title="Share Case"><Share2 size={16} /></button>
+                            <button onClick={(e) => { e.stopPropagation(); deleteStudy(c.id); }} className="p-1.5 text-rose-500 bg-rose-500/10 hover:bg-rose-500/20 rounded transition-colors" title="Delete Case"><Trash2 size={16} /></button>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -368,6 +421,9 @@ const CaseTimeline = ({ doctor, onLogout }) => {
                         <span className="flex items-center gap-1.5"><span className="text-gray-500">Sex:</span> <span className="text-gray-200">{patientData.sex}</span></span>
                         <span className="flex items-center gap-1.5"><span className="text-gray-500">Modality:</span> <span className="bg-gray-800 border border-gray-700 px-2 py-0.5 rounded text-gray-200 font-bold">{patientData.modality}</span></span>
                         <span className="flex items-center gap-1.5"><span className="text-gray-500">Date:</span> <span className="text-gray-200">{patientData.studyDate}</span></span>
+                        {patientData.instances_count !== undefined && (
+                           <span className="flex items-center gap-1.5"><span className="text-gray-500 text-xs flex items-center"><FileImage size={12} className="mr-1"/> Images:</span> <span className="text-green-400 font-bold">{patientData.instances_count}</span></span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -498,6 +554,77 @@ const CaseTimeline = ({ doctor, onLogout }) => {
               <a href={`mailto:tech@cloudrad.com`} className="w-full bg-gray-800 hover:bg-gray-700 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-colors"><Mail size={16}/> Email tech@cloudrad.com</a>
               <button onClick={() => setShowHelpModal(false)} className="w-full border border-gray-700 hover:bg-gray-800 text-white font-bold py-3 rounded-lg transition-colors">Close</button>
             </div>
+          </div>
+        </div>
+      )}
+      {/* Share Only Modal */}
+      {showShareModal && patientData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto">
+          <div className={`w-full max-w-2xl ${theme === 'dark' ? 'bg-[#0b0f19]' : 'bg-[#111827]'} border border-gray-800 p-8 rounded-2xl shadow-2xl relative`}>
+             <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-bold text-white flex items-center gap-2"><Share2 size={20} className="text-blue-500"/> Share Study</h3>
+                <button onClick={() => {setShowShareModal(false); setPatientData(null);}} className="text-gray-400 hover:text-white bg-gray-900 rounded-full w-8 h-8 flex items-center justify-center border border-gray-800">&times;</button>
+             </div>
+             
+             <div className="mb-6 p-4 bg-gray-900/50 rounded-xl border border-gray-800 flex items-center gap-4">
+               <div className="bg-blue-900/30 text-blue-400 w-12 h-12 rounded-lg font-bold flex items-center justify-center border border-blue-800/50">
+                  {patientData.name.charAt(0)}
+               </div>
+               <div>
+                  <h4 className="text-gray-200 font-bold">{patientData.name}</h4>
+                  <p className="text-xs text-gray-500">ID: {patientData.id} &bull; Modality: {patientData.modality}</p>
+               </div>
+             </div>
+
+             {!generatedToken ? (
+                <div className="bg-gray-900/50 border border-gray-800 p-6 rounded-xl flex flex-col space-y-4">
+                  <div className="flex w-full gap-4">
+                     <div className="flex-1 relative">
+                        <select 
+                           value={expiry} 
+                           onChange={(e) => setExpiry(e.target.value)}
+                           className="w-full bg-[#0b0f19] border border-gray-700 text-gray-300 p-3.5 rounded-lg appearance-none text-sm focus:outline-none focus:border-blue-500 font-semibold"
+                        >
+                           <option>7 Days Activity</option>
+                           <option>14 Days Activity</option>
+                           <option>Close Immediately</option>
+                        </select>
+                        <Clock size={16} className="absolute right-4 top-4 text-gray-600" pointerEvents="none"/>
+                        <label className="absolute -top-2 left-3 bg-[#0b0f19] px-1 text-[10px] uppercase font-bold text-gray-500">Token Expiry</label>
+                     </div>
+                     <div className="flex-1 relative">
+                        <input 
+                           type="text" 
+                           value={linkPasscode}
+                           onChange={(e) => setLinkPasscode(e.target.value)}
+                           placeholder="Optional Passcode"
+                           className="w-full bg-[#0b0f19] border border-gray-700 text-gray-300 p-3.5 rounded-lg text-sm focus:outline-none focus:border-blue-500 font-semibold"
+                        />
+                        <ShieldAlert size={16} className="absolute right-4 top-4 text-gray-600" pointerEvents="none"/>
+                        <label className="absolute -top-2 left-3 bg-[#0b0f19] px-1 text-[10px] uppercase font-bold text-gray-500">Access Control</label>
+                     </div>
+                  </div>
+                  <button onClick={generateLink} disabled={isGenerating} className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold p-3.5 rounded-lg shadow-lg transition-colors flex items-center justify-center gap-2">
+                     {isGenerating ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <LinkIcon size={18}/>}
+                     Generate Secure Link
+                  </button>
+                </div>
+             ) : (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                   <button onClick={copyToClipboard} className={`flex flex-col items-center justify-center p-4 h-32 rounded-lg transition-all border font-semibold text-sm group ${copiedKey ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-blue-600 border-blue-500 text-white hover:bg-blue-500 shadow-lg'}`}>
+                      {copiedKey ? <Check size={24} className="mb-3" /> : <Copy size={24} className="mb-3" />}
+                      {copiedKey ? 'Link Copied!' : 'Copy Secure Link'}
+                   </button>
+                   <a href={`https://wa.me/?text=${encodeURIComponent(`Hello ${patientData.name}, your ${patientData.modality} study is ready. View it here: ${window.location.origin}/view/${generatedToken} ${linkPasscode ? `(Passcode: ${linkPasscode})` : ''}`)}`} target="_blank" rel="noreferrer" className="flex flex-col items-center justify-center p-4 h-32 rounded-lg bg-gray-900/50 text-gray-300 hover:bg-[#25D366]/10 hover:text-[#25D366] hover:border-[#25D366]/30 transition-all border border-gray-800 font-semibold text-sm group">
+                      <MessageSquare size={24} className="mb-3 text-gray-500 group-hover:text-[#25D366] transition-colors" />
+                      WhatsApp
+                   </a>
+                   <a href={`mailto:?subject=Your Radiology Study is Ready&body=${encodeURIComponent(`Hello ${patientData.name}, your ${patientData.modality} study is ready.\nView securely: ${window.location.origin}/view/${generatedToken} \n${linkPasscode ? `(Passcode: ${linkPasscode})` : ''}`)}`} className="flex flex-col items-center justify-center p-4 h-32 rounded-lg bg-gray-900/50 text-gray-300 hover:bg-blue-500/10 hover:text-blue-400 hover:border-blue-500/30 transition-all border border-gray-800 font-semibold text-sm group">
+                      <Mail size={24} className="mb-3 text-gray-500 group-hover:text-blue-400 transition-colors" />
+                      Email Link
+                   </a>
+                </div>
+             )}
           </div>
         </div>
       )}
