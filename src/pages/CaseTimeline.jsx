@@ -33,9 +33,10 @@ const CaseTimeline = ({ doctor, onLogout }) => {
     try {
       setLoading(true);
       const host = window.location.hostname;
-      const apiUrl = host === 'localhost' || host === '127.0.0.1' 
-        ? 'http://127.0.0.1:8000/api/studies' 
-        : 'https://backend.cloudrad.app/api/studies';
+      const baseUrl = import.meta.env.VITE_BACKEND_URL || (host === 'localhost' || host === '127.0.0.1' 
+        ? 'http://127.0.0.1:8000' 
+        : 'https://api.167-233-227-144.nip.io');
+      const apiUrl = `${baseUrl}/api/studies`;
 
       const response = await axios.get(apiUrl, {
         headers: {
@@ -58,9 +59,10 @@ const CaseTimeline = ({ doctor, onLogout }) => {
     if(!window.confirm("Are you sure you want to delete this case?")) return;
     try {
       const host = window.location.hostname;
-      const apiUrl = host === 'localhost' || host === '127.0.0.1' 
-        ? `http://127.0.0.1:8000/api/studies/${studyId}` 
-        : `https://backend.cloudrad.app/api/studies/${studyId}`;
+      const baseUrl = import.meta.env.VITE_BACKEND_URL || (host === 'localhost' || host === '127.0.0.1' 
+        ? 'http://127.0.0.1:8000' 
+        : 'https://api.167-233-227-144.nip.io');
+      const apiUrl = `${baseUrl}/api/studies/${studyId}`;
 
       await axios.delete(apiUrl, {
         headers: {
@@ -86,9 +88,10 @@ const CaseTimeline = ({ doctor, onLogout }) => {
 
     try {
       const host = window.location.hostname;
-      const apiUrl = host === 'localhost' || host === '127.0.0.1' 
-        ? 'http://127.0.0.1:8000/api/upload' 
-        : 'https://backend.cloudrad.app/api/upload';
+      const baseUrl = import.meta.env.VITE_BACKEND_URL || (host === 'localhost' || host === '127.0.0.1' 
+        ? 'http://127.0.0.1:8000' 
+        : 'https://api.167-233-227-144.nip.io');
+      const apiUrl = `${baseUrl}/api/upload`;
 
       const res = await axios.post(apiUrl, formData, {
         headers: {
