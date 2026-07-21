@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import axios from 'axios';
 import { 
-  Share2, Mail, QrCode, Clock, CloudUpload, MessageSquare, 
+  Share2, Mail, QrCode, Clock, UploadCloud, MessageSquare, 
   FileImage, ChevronRight,
   Search, Plus, LogOut, Settings, HelpCircle, Trash2, ShieldAlert, Check, Copy, Link as LinkIcon,
   Menu, Users, Target, Inbox, Trash, UserPlus, Video, Bell, MessageCircle, Calendar, Filter, Folder, MoreVertical
@@ -353,7 +353,7 @@ const CaseTimeline = ({ doctor, onLogout }) => {
             {!isExtracted && (
               <div className="bg-white border border-gray-200 p-8 md:p-12 rounded-2xl shadow-xl relative -mt-10">
                 <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-                   <div className="bg-blue-50 text-blue-600 p-2 rounded-lg"><CloudUpload size={20}/></div>
+                   <div className="bg-blue-50 text-blue-600 p-2 rounded-lg"><UploadCloud size={20}/></div>
                    Secure Upload Portal
                 </h3>
                 <div {...getRootProps()} className={`border-2 border-dashed rounded-xl p-10 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 ${isDragActive ? 'border-blue-500 bg-blue-50/50' : 'border-gray-300 hover:border-gray-400 bg-gray-50'}`}>
