@@ -15,7 +15,11 @@ export default function LoginPage({ onLogin }) {
     setLoading(true);
 
     try {
-      const API_URL = import.meta.env.VITE_BACKEND_URL || 'https://api.167-233-227-144.nip.io';
+      const host = window.location.hostname;
+      const API_URL = (host === 'localhost' || host === '127.0.0.1') 
+          ? 'http://127.0.0.1:8000' 
+          : 'https://backend.cloudrad.app';
+          
       const res = await axios.post(`${API_URL}/api/auth/login`, { email, password });
       
       localStorage.setItem('cloudrad_token', res.data.access_token);
