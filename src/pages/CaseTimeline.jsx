@@ -340,6 +340,7 @@ const CaseTimeline = ({ doctor, onLogout }) => {
              )}
           </div>
         </main>
+      </div>
 
       {/* Modal / Extracted Patient Card Overlays */}
       {showUploadModal && (
