@@ -4,21 +4,20 @@ import axios from 'axios';
 import { 
   Share2, Mail, QrCode, Clock, UploadCloud, MessageSquare, 
   FileImage, ChevronRight,
-  Search, Plus, LogOut, Settings, HelpCircle, Moon, Trash2, ShieldAlert, Check, Copy, Link as LinkIcon,
+  Search, Plus, LogOut, Settings, HelpCircle, Trash2, ShieldAlert, Check, Copy, Link as LinkIcon,
   Menu, Users, Target, Inbox, Trash, UserPlus, Video, Bell, MessageCircle, Calendar, Filter, Folder, MoreVertical
 } from 'lucide-react';
 
 const CaseTimeline = ({ doctor, onLogout }) => {
   const [cases, setCases] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('cases');
-  const [theme, setTheme] = useState('dark');
-  const [showSettingsModal, setShowSettingsModal] = useState(false);
-  const [showHelpModal, setShowHelpModal] = useState(false);
   
   // Modal Overlays
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showHelpModal, setShowHelpModal] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isExtracted, setIsExtracted] = useState(false);
   const [patientData, setPatientData] = useState(null);
@@ -104,7 +103,6 @@ const CaseTimeline = ({ doctor, onLogout }) => {
       
       setUploadProgress(100);
       
-      // Check if instances_count is returned, otherwise fallback
       const instances = res.data.studies && res.data.studies.length > 0 
           ? res.data.studies[0].instances_count 
           : acceptedFiles.length;
@@ -126,7 +124,7 @@ const CaseTimeline = ({ doctor, onLogout }) => {
       alert('Upload failed. Please ensure the backend is running and CORS is configured correctly.');
       setUploadProgress(0);
     }
-  }, []);
+  }, [fetchCases]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
 
@@ -162,10 +160,9 @@ const CaseTimeline = ({ doctor, onLogout }) => {
   };
 
   const userName = doctor?.name || "Dr. Demo";
-  const userEmail = doctor?.email || "demo@cloudrad.app";
 
   return (
-    <div className="min-h-screen bg-white text-gray-800 font-sans flex overflow-hidden">
+    <div className="min-h-screen bg-gray-50 text-gray-800 font-sans flex overflow-hidden">
       
       {/* 1. Left Sidebar (Icon only) */}
       <aside className="w-16 bg-white border-r border-gray-200 flex flex-col items-center py-4 flex-shrink-0 z-20">
@@ -179,8 +176,8 @@ const CaseTimeline = ({ doctor, onLogout }) => {
            <button className="text-gray-400 hover:text-gray-600 p-2"><Target size={20} title="Exams"/></button>
            <button className="text-gray-400 hover:text-gray-600 p-2"><Inbox size={20} title="Inbox"/></button>
            <button className="text-gray-400 hover:text-gray-600 p-2"><Trash size={20} title="Trash"/></button>
-           <button className="text-gray-400 hover:text-gray-600 p-2"><Settings size={20} title="Settings"/></button>
-           <button className="text-gray-400 hover:text-gray-600 p-2"><UserPlus size={20} title="Members"/></button>
+           <button onClick={() => setShowSettingsModal(true)} className="text-gray-400 hover:text-emerald-600 p-2 transition-colors"><Settings size={20} title="Settings"/></button>
+           <button onClick={() => setShowHelpModal(true)} className="text-gray-400 hover:text-blue-600 p-2 transition-colors"><HelpCircle size={20} title="Help"/></button>
         </div>
       </aside>
 
@@ -216,7 +213,7 @@ const CaseTimeline = ({ doctor, onLogout }) => {
             
             <div className="flex items-center gap-2 ml-2 cursor-pointer border border-gray-200 pl-2 pr-4 py-1.5 rounded-full shadow-sm hover:shadow transition-all bg-white">
                <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold overflow-hidden">
-                  <img src="https://i.pravatar.cc/150?img=11" alt="Mircea Popa" className="w-full h-full object-cover" />
+                  <img src="https://i.pravatar.cc/150?img=11" alt="Profile" className="w-full h-full object-cover" />
                </div>
                <span className="text-sm font-semibold text-gray-700">{userName}</span>
             </div>
@@ -313,8 +310,9 @@ const CaseTimeline = ({ doctor, onLogout }) => {
                         
                         <div className="col-span-2 flex items-center">
                            <div className="flex -space-x-2 mr-2">
-                              <img className="inline-block w-8 h-8 object-cover rounded-full ring-2 ring-white shadow-sm" src="https://i.pravatar.cc/150?img=12" alt="Member" />
-                              <img className="inline-block w-8 h-8 object-cover rounded-full ring-2 ring-white shadow-sm" src="https://i.pravatar.cc/150?img=33" alt="Member" />
+                              {/* placeholder profiles */}
+                              <div className="w-8 h-8 rounded-full bg-blue-100 border-2 border-white flex justify-center items-center text-xs font-bold text-blue-600">J</div>
+                              <div className="w-8 h-8 rounded-full bg-emerald-100 border-2 border-white flex justify-center items-center text-xs font-bold text-emerald-600">S</div>
                            </div>
                            <span className="text-xs bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded font-bold border border-gray-200 shadow-sm">+1</span>
                         </div>
@@ -383,7 +381,7 @@ const CaseTimeline = ({ doctor, onLogout }) => {
               </div>
             )}
 
-            {isExtracted && (
+            {isExtracted && patientData && (
               <div className="bg-white border border-gray-200 rounded-2xl shadow-xl p-8 space-y-8 relative -mt-10">
                 <div className="flex flex-col md:flex-row justify-between items-start gap-4">
                   <div className="flex items-center gap-5">
@@ -414,7 +412,7 @@ const CaseTimeline = ({ doctor, onLogout }) => {
                 <div>
                   <h4 className="text-[11px] font-bold text-gray-500 mb-4 flex items-center gap-2 tracking-widest uppercase"><FileImage size={14}/> Image Gallery</h4>
                   <div className="relative group">
-                    <div className="flex gap-4 overflow-x-auto pb-4 hide-scrollbar items-center">
+                    <div className="flex gap-4 overflow-x-auto pb-4 items-center">
                       {[1,2,3,4,5,6].map(thumb => (
                         <div key={thumb} className="flex-shrink-0 w-[140px] h-[140px] bg-gray-50 border border-gray-200 rounded-lg flex items-center justify-center cursor-pointer hover:border-blue-400 hover:ring-1 hover:ring-blue-400 transition-all shadow-sm overflow-hidden relative group/item">
                            <svg className="w-10 h-10 text-gray-400 group-hover/item:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
@@ -455,7 +453,7 @@ const CaseTimeline = ({ doctor, onLogout }) => {
                                  value={linkPasscode}
                                  onChange={(e) => setLinkPasscode(e.target.value)}
                                  placeholder="Optional Passcode"
-                                 className="w-full bg-white border border-gray-200 text-gray-700 p-3.5 rounded-lg text-sm focus:outline-none focus:border-blue-500 font-semibold shadow-sm"
+                                 className="w-full bg-white border border-gray-200 shadow-sm text-gray-700 p-3.5 rounded-lg text-sm focus:outline-none focus:border-blue-500 font-semibold"
                               />
                               <ShieldAlert size={16} className="absolute right-4 top-4 text-gray-400" pointerEvents="none"/>
                               <label className="absolute -top-2 left-3 bg-white px-1 text-[10px] uppercase font-bold text-gray-500">Access Control</label>
@@ -472,11 +470,11 @@ const CaseTimeline = ({ doctor, onLogout }) => {
                            {copiedKey ? <Check size={20} className="mb-2" /> : <Copy size={20} className="mb-2" />}
                            {copiedKey ? 'Link Copied!' : 'Copy Secure Link'}
                         </button>
-                        <a href={`https://wa.me/?text=${encodeURIComponent(`Hello ${patientData.name}, your ${patientData.modality} study is ready. View it here: ${window.location.origin}/view/${generatedToken} ${linkPasscode ? `(Passcode: ${linkPasscode})` : ''}`)}`} target="_blank" rel="noreferrer" className="flex flex-col items-center justify-center p-4 h-full rounded-lg bg-white text-gray-600 hover:bg-[#25D366]/10 hover:text-[#25D366] hover:border-[#25D366]/30 transition-all border border-gray-200 font-semibold text-sm group shadow-sm">
+                        <a href={`https://wa.me/?text=${encodeURIComponent(`Hello ${patientData.name}, your study is ready. View it here: ${window.location.origin}/view/${generatedToken} ${linkPasscode ? `(Passcode: ${linkPasscode})` : ''}`)}`} target="_blank" rel="noreferrer" className="flex flex-col items-center justify-center p-4 h-full rounded-lg bg-white text-gray-600 hover:bg-[#25D366]/10 hover:text-[#25D366] hover:border-[#25D366]/30 transition-all border border-gray-200 font-semibold text-sm group shadow-sm">
                            <MessageSquare size={20} className="mb-2 text-gray-400 group-hover:text-[#25D366] transition-colors" />
                            WhatsApp
                         </a>
-                        <a href={`mailto:?subject=Your Radiology Study is Ready&body=${encodeURIComponent(`Hello ${patientData.name}, your ${patientData.modality} study is ready.\nView securely: ${window.location.origin}/view/${generatedToken} \n${linkPasscode ? `(Passcode: ${linkPasscode})` : ''}`)}`} className="flex flex-col items-center justify-center p-4 h-full rounded-lg bg-white text-gray-600 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-all border border-gray-200 font-semibold text-sm group shadow-sm">
+                        <a href={`mailto:?subject=Your Radiology Study is Ready&body=${encodeURIComponent(`Hello ${patientData.name}, your study is ready.\nView securely: ${window.location.origin}/view/${generatedToken} \n${linkPasscode ? `(Passcode: ${linkPasscode})` : ''}`)}`} className="flex flex-col items-center justify-center p-4 h-full rounded-lg bg-white text-gray-600 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-all border border-gray-200 font-semibold text-sm group shadow-sm">
                            <Mail size={20} className="mb-2 text-gray-400 group-hover:text-blue-500 transition-colors" />
                            Email Link
                         </a>
@@ -588,11 +586,11 @@ const CaseTimeline = ({ doctor, onLogout }) => {
                       {copiedKey ? <Check size={24} className="mb-3" /> : <Copy size={24} className="mb-3" />}
                       {copiedKey ? 'Link Copied!' : 'Copy Secure Link'}
                    </button>
-                   <a href={`https://wa.me/?text=${encodeURIComponent(`Hello ${patientData.name}, your ${patientData.modality} study is ready. View it here: ${window.location.origin}/view/${generatedToken} ${linkPasscode ? `(Passcode: ${linkPasscode})` : ''}`)}`} target="_blank" rel="noreferrer" className="flex flex-col items-center justify-center p-4 h-32 rounded-lg bg-white text-gray-600 hover:bg-[#25D366]/5 hover:text-[#25D366] hover:border-[#25D366]/30 transition-all border border-gray-200 font-semibold text-sm group shadow-sm">
+                   <a href={`https://wa.me/?text=${encodeURIComponent(`Hello ${patientData.name}, your study is ready. View it here: ${window.location.origin}/view/${generatedToken} ${linkPasscode ? `(Passcode: ${linkPasscode})` : ''}`)}`} target="_blank" rel="noreferrer" className="flex flex-col items-center justify-center p-4 h-32 rounded-lg bg-white text-gray-600 hover:bg-[#25D366]/5 hover:text-[#25D366] hover:border-[#25D366]/30 transition-all border border-gray-200 font-semibold text-sm group shadow-sm">
                       <MessageSquare size={24} className="mb-3 text-gray-400 group-hover:text-[#25D366] transition-colors" />
                       WhatsApp
                    </a>
-                   <a href={`mailto:?subject=Your Radiology Study is Ready&body=${encodeURIComponent(`Hello ${patientData.name}, your ${patientData.modality} study is ready.\nView securely: ${window.location.origin}/view/${generatedToken} \n${linkPasscode ? `(Passcode: ${linkPasscode})` : ''}`)}`} className="flex flex-col items-center justify-center p-4 h-32 rounded-lg bg-white text-gray-600 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-all border border-gray-200 font-semibold text-sm group shadow-sm">
+                   <a href={`mailto:?subject=Your Radiology Study is Ready&body=${encodeURIComponent(`Hello ${patientData.name}, your study is ready.\nView securely: ${window.location.origin}/view/${generatedToken} \n${linkPasscode ? `(Passcode: ${linkPasscode})` : ''}`)}`} className="flex flex-col items-center justify-center p-4 h-32 rounded-lg bg-white text-gray-600 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-all border border-gray-200 font-semibold text-sm group shadow-sm">
                       <Mail size={24} className="mb-3 text-gray-400 group-hover:text-blue-500 transition-colors" />
                       Email Link
                    </a>
