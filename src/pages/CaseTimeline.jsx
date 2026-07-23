@@ -1,4 +1,4 @@
-﻿import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import axios from 'axios';
 import { 
@@ -40,7 +40,7 @@ const CaseTimeline = ({ doctor, onLogout }) => {
 
       const response = await axios.get(apiUrl, {
         headers: {
-          'Authorization': 'Basic ' + btoa('viewer:viewer123')
+          'Authorization': 'Bearer ' + localStorage.getItem('cloudrad_token')
         }
       });
       setCases(response.data);
@@ -66,7 +66,7 @@ const CaseTimeline = ({ doctor, onLogout }) => {
 
       await axios.delete(apiUrl, {
         headers: {
-          'Authorization': 'Basic ' + btoa('viewer:viewer123')
+          'Authorization': 'Bearer ' + localStorage.getItem('cloudrad_token')
         }
       });
       fetchCases();
@@ -96,7 +96,7 @@ const CaseTimeline = ({ doctor, onLogout }) => {
       const res = await axios.post(apiUrl, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
-          'Authorization': 'Basic ' + btoa('viewer:viewer123')
+          'Authorization': 'Bearer ' + localStorage.getItem('cloudrad_token')
         },
         onUploadProgress: (progressEvent) => {
           const percentCompleted = Math.round((progressEvent.loaded * 90) / progressEvent.total);
