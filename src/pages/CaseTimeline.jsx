@@ -95,7 +95,6 @@ const CaseTimeline = ({ doctor, onLogout }) => {
 
       const res = await axios.post(apiUrl, formData, {
         headers: {
-          'Content-Type': 'multipart/form-data',
           'Authorization': 'Bearer ' + localStorage.getItem('cloudrad_token')
         },
         onUploadProgress: (progressEvent) => {
