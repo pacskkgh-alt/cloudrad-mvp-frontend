@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+﻿import React, { useState, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import axios from 'axios';
 import { 
@@ -35,7 +35,7 @@ const CaseTimeline = ({ doctor, onLogout }) => {
       const host = window.location.hostname;
       const baseUrl = import.meta.env.VITE_BACKEND_URL || (host === 'localhost' || host === '127.0.0.1' 
         ? 'http://127.0.0.1:8000' 
-        : 'https://api.167-233-227-144.nip.io');
+        : 'https://api.165-227-89-199.nip.io');
       const apiUrl = `${baseUrl}/api/studies`;
 
       const response = await axios.get(apiUrl, {
@@ -61,7 +61,7 @@ const CaseTimeline = ({ doctor, onLogout }) => {
       const host = window.location.hostname;
       const baseUrl = import.meta.env.VITE_BACKEND_URL || (host === 'localhost' || host === '127.0.0.1' 
         ? 'http://127.0.0.1:8000' 
-        : 'https://api.167-233-227-144.nip.io');
+        : 'https://api.165-227-89-199.nip.io');
       const apiUrl = `${baseUrl}/api/studies/${studyId}`;
 
       await axios.delete(apiUrl, {
@@ -90,7 +90,7 @@ const CaseTimeline = ({ doctor, onLogout }) => {
       const host = window.location.hostname;
       const baseUrl = import.meta.env.VITE_BACKEND_URL || (host === 'localhost' || host === '127.0.0.1' 
         ? 'http://127.0.0.1:8000' 
-        : 'https://api.167-233-227-144.nip.io');
+        : 'https://api.165-227-89-199.nip.io');
       const apiUrl = `${baseUrl}/api/upload`;
 
       const res = await axios.post(apiUrl, formData, {

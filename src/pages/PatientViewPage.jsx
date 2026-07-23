@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import DOMPurify from 'dompurify';
 import { useParams } from 'react-router-dom';
 import { DownloadCloud, ShieldAlert, FileText, Image as ImageIcon, ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_BACKEND_URL || 'https://api.167-233-227-144.nip.io';
-const PACS_URL = import.meta.env.VITE_PACS_URL || 'https://pacs.167-233-227-144.nip.io';
+const API_URL = import.meta.env.VITE_BACKEND_URL || 'https://api.165-227-89-199.nip.io';
+const PACS_URL = import.meta.env.VITE_PACS_URL || 'https://pacs.165-227-89-199.nip.io';
 
 export default function PatientViewPage() {
   const { token } = useParams();

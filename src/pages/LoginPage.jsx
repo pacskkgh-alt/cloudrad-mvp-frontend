@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import axios from 'axios';
 
@@ -15,7 +15,7 @@ export default function LoginPage({ onLogin }) {
     setLoading(true);
 
     try {
-      const API_URL = import.meta.env.VITE_BACKEND_URL || 'https://api.167-233-227-144.nip.io';
+      const API_URL = import.meta.env.VITE_BACKEND_URL || 'https://api.165-227-89-199.nip.io';
           
       const res = await axios.post(`${API_URL}/api/auth/login`, { email, password });
       
