@@ -123,7 +123,8 @@ const CaseTimeline = ({ doctor, onLogout }) => {
       fetchCases();
     } catch (error) {
       console.error('Upload failed:', error);
-      alert('Upload failed. Please ensure the backend is running and CORS is configured correctly.');
+      const serverMsg = error.response?.data?.detail || 'Upload failed. Please ensure the backend is running and CORS is configured correctly.';
+      alert('Upload Error from Server: ' + serverMsg);
       setUploadProgress(0);
     }
   }, [fetchCases]);
