@@ -110,6 +110,7 @@ const CaseTimeline = ({ doctor, onLogout }) => {
           : acceptedFiles.length;
 
       setPatientData({
+        study_id: res.data.study_id || "",
         name: res.data.patient_name || "Anonymized Patient",
         id: res.data.patient_id || "PX-" + Math.floor(Math.random()*10000),
         age: 'Unknown',
@@ -141,6 +142,7 @@ const CaseTimeline = ({ doctor, onLogout }) => {
 
   const openShareModal = (study) => {
     setPatientData({
+      study_id: study.id,
       name: study.patient_name || "Unknown Patient",
       id: study.patient_id_number || "N/A",
       modality: study.modality || "CT"
@@ -149,15 +151,44 @@ const CaseTimeline = ({ doctor, onLogout }) => {
     setShowShareModal(true);
   };
 
-  const generateLink = () => {
+  const generateLink = async () => {
     setIsGenerating(true);
-    setTimeout(() => {
-       setIsGenerating(false);
-       setGeneratedToken('CLRAD-' + Math.random().toString(36).substr(2, 9).toUpperCase());
-    }, 1500);
+    try {
+      const host = window.location.hostname;
+      const baseUrl = import.meta.env.VITE_BACKEND_URL || (host === 'localhost' || host === '127.0.0.1' 
+        ? 'http://127.0.0.1:8000' 
+        : 'https://api.165-227-89-199.nip.io');
+        
+      let expiryDays = 7;
+      if (expiry.includes('14')) expiryDays = 14;
+      else if (expiry.includes('Immediately')) expiryDays = 0;
+
+      const res = await axios.post(`${baseUrl}/api/generate-share-link`, {
+        study_id: patientData.study_id,
+        expiry_days: expiryDays
+      }, {
+        headers: { 'Authorization': 'Bearer ' + localStorage.getItem('cloudrad_token') }
+      });
+      
+      setGeneratedToken(res.data.token);
+    } catch (err) {
+      alert("Failed to generate secure link. Ensure you have permission.");
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const copyToClipboard = () => {
+     if (navigator.clipboard) {
+         navigator.clipboard.writeText(`${window.location.origin}/view/${generatedToken}`);
+     } else {
+         const el = document.createElement('textarea');
+         el.value = `${window.location.origin}/view/${generatedToken}`;
+         document.body.appendChild(el);
+         el.select();
+         document.execCommand('copy');
+         document.body.removeChild(el);
+     }
      setCopiedKey(true);
      setTimeout(()=>setCopiedKey(false), 2000);
   };
