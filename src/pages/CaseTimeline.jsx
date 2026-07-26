@@ -142,6 +142,18 @@ const CaseTimeline = ({ doctor, onLogout }) => {
     setGeneratedToken(null);
   };
 
+  const handleExamsClick = () => alert("Exams view coming soon!");
+  const handleInboxClick = () => alert("Inbox feature coming soon!");
+  const handleTrashClick = () => alert("Trash view coming soon!");
+  const handleGlobalShareClick = () => alert("Global share settings coming soon!");
+  const handleVideoClick = () => alert("Video consultation feature coming soon!");
+  const handleInviteClick = () => alert("Invite feature coming soon!");
+  const handleNotificationsClick = () => alert("Notifications coming soon!");
+  const handleMessagesClick = () => alert("Messages coming soon!");
+  const handleMyCasesClick = () => alert("Switching to My Cases view");
+  const handleRecentCaseClick = () => alert("Opening recent case...");
+  const handleAdvancedFiltersClick = () => alert("Advanced filters coming soon!");
+
   const openShareModal = (study) => {
     setPatientData({
       study_id: study.id,
@@ -165,9 +177,12 @@ const CaseTimeline = ({ doctor, onLogout }) => {
       if (expiry.includes('14')) expiryDays = 14;
       else if (expiry.includes('Immediately')) expiryDays = 0;
 
-      const res = await axios.post(`${baseUrl}/api/generate-share-link`, {
+      const res = await axios.post(`${baseUrl}/api/links/`, {
         study_id: patientData.study_id,
-        expiry_days: expiryDays
+        duration_days: expiryDays > 0 ? expiryDays : null,
+        passcode: linkPasscode || null,
+        allows_download: true,
+        is_anonymized: false
       }, {
         headers: { 'Authorization': 'Bearer ' + localStorage.getItem('cloudrad_token') }
       });
@@ -209,9 +224,9 @@ const CaseTimeline = ({ doctor, onLogout }) => {
               <div className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-500 rounded-r-md"></div>
               <button className="text-emerald-500 bg-emerald-50 p-2 rounded-lg" title="Cases"><Users size={20}/></button>
            </div>
-           <button className="text-gray-400 hover:text-gray-600 p-2"><Target size={20} title="Exams"/></button>
-           <button className="text-gray-400 hover:text-gray-600 p-2"><Inbox size={20} title="Inbox"/></button>
-           <button className="text-gray-400 hover:text-gray-600 p-2"><Trash size={20} title="Trash"/></button>
+           <button onClick={handleExamsClick} className="text-gray-400 hover:text-gray-600 p-2"><Target size={20} title="Exams"/></button>
+           <button onClick={handleInboxClick} className="text-gray-400 hover:text-gray-600 p-2"><Inbox size={20} title="Inbox"/></button>
+           <button onClick={handleTrashClick} className="text-gray-400 hover:text-gray-600 p-2"><Trash size={20} title="Trash"/></button>
            <button onClick={() => setShowSettingsModal(true)} className="text-gray-400 hover:text-emerald-600 p-2 transition-colors"><Settings size={20} title="Settings"/></button>
            <button onClick={() => setShowHelpModal(true)} className="text-gray-400 hover:text-blue-600 p-2 transition-colors"><HelpCircle size={20} title="Help"/></button>
         </div>
@@ -235,17 +250,17 @@ const CaseTimeline = ({ doctor, onLogout }) => {
           </div>
 
           <div className="flex items-center gap-4">
-            <button className="p-2 text-blue-500 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors" title="Share"><Share2 size={18} /></button>
-            <button className="p-2 text-fuchsia-500 bg-fuchsia-100/50 rounded-lg hover:bg-fuchsia-100 transition-colors" title="Video"><Video size={18} /></button>
-            <button className="flex items-center gap-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 px-4 py-2 rounded-lg text-sm font-bold transition-colors">
+            <button onClick={handleGlobalShareClick} className="p-2 text-blue-500 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors" title="Share"><Share2 size={18} /></button>
+            <button onClick={handleVideoClick} className="p-2 text-fuchsia-500 bg-fuchsia-100/50 rounded-lg hover:bg-fuchsia-100 transition-colors" title="Video"><Video size={18} /></button>
+            <button onClick={handleInviteClick} className="flex items-center gap-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 px-4 py-2 rounded-lg text-sm font-bold transition-colors">
                <UserPlus size={16} />
                Invite to CloudRad
             </button>
             
             <div className="h-6 w-px bg-gray-200 mx-2"></div>
             
-            <button className="text-gray-500 hover:text-gray-800 p-1.5 transition-colors"><Bell size={20}/></button>
-            <button className="text-gray-500 hover:text-gray-800 p-1.5 transition-colors"><MessageCircle size={20}/></button>
+            <button onClick={handleNotificationsClick} className="text-gray-500 hover:text-gray-800 p-1.5 transition-colors"><Bell size={20}/></button>
+            <button onClick={handleMessagesClick} className="text-gray-500 hover:text-gray-800 p-1.5 transition-colors"><MessageCircle size={20}/></button>
             
             <div className="flex items-center gap-2 ml-2 cursor-pointer border border-gray-200 pl-2 pr-4 py-1.5 rounded-full shadow-sm hover:shadow transition-all bg-white">
                <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold overflow-hidden">
@@ -263,11 +278,11 @@ const CaseTimeline = ({ doctor, onLogout }) => {
           {/* Tabs & New Case Row */}
           <div className="flex justify-between items-end border-b border-gray-200 mb-6">
              <div className="flex bg-gray-50/50 pl-2 pt-2 rounded-tl-xl border-l border-t border-gray-200 gap-1.5">
-                <button className="px-6 py-2.5 bg-white border-t-2 border-t-emerald-500 border-l border-r border-gray-200 font-bold text-sm text-gray-900 rounded-t-lg shadow-[0_-2px_10px_rgba(0,0,0,0.03)] flex items-center gap-2">
+                <button onClick={handleMyCasesClick} className="px-6 py-2.5 bg-white border-t-2 border-t-emerald-500 border-l border-r border-gray-200 font-bold text-sm text-gray-900 rounded-t-lg shadow-[0_-2px_10px_rgba(0,0,0,0.03)] flex items-center gap-2">
                    <Users size={16} className="text-gray-800"/>
                    My Cases
                 </button>
-                <button className="px-6 py-2.5 text-sm text-gray-500 font-medium hover:text-gray-800 hover:bg-white rounded-t-lg transition-colors flex items-center gap-2">
+                <button onClick={handleRecentCaseClick} className="px-6 py-2.5 text-sm text-gray-500 font-medium hover:text-gray-800 hover:bg-white rounded-t-lg transition-colors flex items-center gap-2">
                    Anonymized00003 <span className="text-gray-400 hover:text-rose-500">&times;</span>
                 </button>
              </div>
@@ -293,7 +308,7 @@ const CaseTimeline = ({ doctor, onLogout }) => {
                    <input type="text" placeholder="Last modified" className="pl-4 pr-9 py-2.5 border border-gray-200 rounded-lg text-sm w-36 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 bg-white shadow-sm font-medium" />
                    <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
                 </div>
-                <button className="flex items-center gap-2 border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 px-4 py-2.5 rounded-lg text-sm shadow-sm transition-colors font-semibold">
+                <button onClick={handleAdvancedFiltersClick} className="flex items-center gap-2 border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 px-4 py-2.5 rounded-lg text-sm shadow-sm transition-colors font-semibold">
                    <Filter size={14}/> Advanced filters
                 </button>
              </div>
@@ -325,7 +340,7 @@ const CaseTimeline = ({ doctor, onLogout }) => {
              ) : (
                 <div className="flex-1 overflow-y-auto bg-gray-50/10">
                    {cases.map((c) => (
-                     <div key={c.id} className="grid grid-cols-12 border-b border-gray-100 p-4 text-sm font-medium text-gray-800 bg-white hover:bg-gray-50 transition-colors items-center group cursor-pointer pl-6" onClick={() => window.open(`${PACS_URL}/app/explorer.html${c.orthanc_study_uuid ? '#study?uuid=' + c.orthanc_study_uuid : ''}`, '_blank')}>
+                     <div key={c.id} className="grid grid-cols-12 border-b border-gray-100 p-4 text-sm font-medium text-gray-800 bg-white hover:bg-gray-50 transition-colors items-center group cursor-pointer pl-6" onClick={() => window.open(`${PACS_URL}/osimis-viewer/app/index.html${c.orthanc_study_uuid ? '?study=' + c.orthanc_study_uuid : ''}`, '_blank')}>
                         <div className="col-span-1 items-center justify-start flex">
                            <input type="checkbox" className="w-3.5 h-3.5 rounded border-gray-300 text-emerald-500 focus:ring-emerald-500 accent-emerald-500 cursor-pointer" onClick={(e)=>e.stopPropagation()} />
                         </div>
