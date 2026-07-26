@@ -53,7 +53,7 @@ export default function PatientViewPage() {
     setLoading(true);
     setErrorStatus(null);
     try {
-      const res = await axios.post(`${API_URL}/api/links/${token}/verify`, { passcode });
+      const res = await axios.post(`${API_URL}/api/links/${token}/verify`, { passcode: passcode.trim() });
       // If still requires passcode, it means it's incorrect (401 handled by catch)
       setStudyInfo(res.data);
       try {
@@ -65,7 +65,7 @@ export default function PatientViewPage() {
       setLoading(false);
     } catch (err) {
       setErrorStatus('REQUIRES_PASSCODE');
-      alert("Incorrect passcode");
+      alert(err.response?.data?.detail || "Incorrect passcode");
       setLoading(false);
     }
   };

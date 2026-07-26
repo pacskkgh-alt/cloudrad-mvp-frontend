@@ -180,7 +180,7 @@ const CaseTimeline = ({ doctor, onLogout }) => {
       const res = await axios.post(`${baseUrl}/api/links/`, {
         study_id: patientData.study_id,
         duration_days: expiryDays > 0 ? expiryDays : null,
-        passcode: linkPasscode || null,
+        passcode: linkPasscode ? linkPasscode.trim() : null,
         allows_download: true,
         is_anonymized: false
       }, {
