@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import axios from 'axios';
 
@@ -39,6 +39,10 @@ export default function LoginPage({ onLogin }) {
       setLoading(false);
     }
   };
+
+  const handleForgotPassword = () => alert("Password recovery coming soon!");
+  const handleRegister = () => alert("Registration coming soon!");
+  const handleGoogleSignIn = () => alert("Google Workspace Auth not yet configured.");
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50/50 font-sans selection:bg-emerald-500/30">
@@ -127,7 +131,7 @@ export default function LoginPage({ onLogin }) {
         {/* Google Authentication Module */}
         <button
           type="button"
-          onClick={() => alert("Google Workspace Auth not yet configured.")}
+          onClick={handleGoogleSignIn}
           className="w-full flex items-center justify-center gap-3 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-bold py-3.5 rounded-xl transition-all duration-200 mb-8 shadow-sm group"
         >
           <svg className="w-5 h-5 transition-transform group-hover:scale-110" viewBox="0 0 24 24">
@@ -153,12 +157,12 @@ export default function LoginPage({ onLogin }) {
 
         {/* Minimal Text Anchors */}
         <div className="flex flex-col items-center justify-center gap-3 text-[13px] font-medium">
-          <span className="text-gray-500 hover:text-gray-900 transition-colors duration-200 cursor-pointer">
+          <span onClick={handleForgotPassword} className="text-gray-500 hover:text-gray-900 transition-colors duration-200 cursor-pointer">
             Forgot password?
           </span>
           <div className="text-gray-500">
             Don't have an account?{' '}
-            <span className="text-emerald-500 hover:text-emerald-600 font-bold transition-colors duration-200 cursor-pointer">
+            <span onClick={handleRegister} className="text-emerald-500 hover:text-emerald-600 font-bold transition-colors duration-200 cursor-pointer">
               Register a new account
             </span>
           </div>

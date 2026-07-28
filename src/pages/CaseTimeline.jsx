@@ -340,7 +340,7 @@ const CaseTimeline = ({ doctor, onLogout }) => {
              ) : (
                 <div className="flex-1 overflow-y-auto bg-gray-50/10">
                    {cases.map((c) => (
-                     <div key={c.id} className="grid grid-cols-12 border-b border-gray-100 p-4 text-sm font-medium text-gray-800 bg-white hover:bg-gray-50 transition-colors items-center group cursor-pointer pl-6" onClick={() => window.open(`${PACS_URL}/osimis-viewer/app/index.html${c.orthanc_study_uuid ? '?study=' + c.orthanc_study_uuid : ''}`, '_blank')}>
+                     <div key={c.id} className="grid grid-cols-12 border-b border-gray-100 p-4 text-sm font-medium text-gray-800 bg-white hover:bg-gray-50 transition-colors items-center group cursor-pointer pl-6" onClick={() => window.open(`${PACS_URL}/app/explorer.html${c.orthanc_study_uuid ? '#study?uuid=' + c.orthanc_study_uuid : ''}`, '_blank')}>
                         <div className="col-span-1 items-center justify-start flex">
                            <input type="checkbox" className="w-3.5 h-3.5 rounded border-gray-300 text-emerald-500 focus:ring-emerald-500 accent-emerald-500 cursor-pointer" onClick={(e)=>e.stopPropagation()} />
                         </div>
