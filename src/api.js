@@ -20,10 +20,22 @@ export function getPacsUrl() {
   return import.meta.env.VITE_PACS_URL || 'https://pacs.165-227-89-199.nip.io';
 }
 
+/** Returns the stored JWT authentication token. */
+export function getAuthToken() {
+  return (
+    localStorage.getItem('cloudrad_token') ||
+    localStorage.getItem('token') ||
+    localStorage.getItem('access_token') ||
+    sessionStorage.getItem('cloudrad_token') ||
+    sessionStorage.getItem('token') ||
+    ''
+  );
+}
+
 /** Returns Authorization headers for authenticated API calls. */
 export function getAuthHeaders() {
-  const token = localStorage.getItem('cloudrad_token');
-  return { Authorization: `Bearer ${token}` };
+  const token = getAuthToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
 /** Computes relative time string from an ISO date string. */

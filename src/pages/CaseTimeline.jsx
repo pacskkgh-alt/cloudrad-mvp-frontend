@@ -1,5 +1,4 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { useDropzone } from 'react-dropzone';
 import axios from 'axios';
 import { getApiUrl, getPacsUrl, getAuthHeaders, relativeTime, getModalityColor } from '../api';
 import { 
@@ -9,6 +8,7 @@ import {
   Menu, Users, Target, Inbox, Trash, UserPlus, Video, Bell, MessageCircle, Calendar, Filter, Folder, MoreVertical, Loader2
 } from 'lucide-react';
 import StudyHoverActions from '../components/StudyHoverActions';
+import UploadTypeModal from '../components/UploadTypeModal';
 
 const API_URL = getApiUrl();
 const PACS_URL = getPacsUrl();
@@ -66,51 +66,6 @@ const CaseTimeline = ({ doctor, onLogout }) => {
     }
   };
 
-  const onDrop = useCallback(async (acceptedFiles) => {
-    if (acceptedFiles.length === 0) return;
-    setIsExtracted(false);
-    setUploadProgress(10);
-    
-    const formData = new FormData();
-    acceptedFiles.forEach(file => {
-      formData.append('files', file);
-    });
-
-    try {
-      const res = await axios.post(`${API_URL}/api/upload`, formData, {
-        headers: getAuthHeaders(),
-        onUploadProgress: (progressEvent) => {
-          const percentCompleted = Math.round((progressEvent.loaded * 90) / progressEvent.total);
-          setUploadProgress(10 + percentCompleted);
-        }
-      });
-      
-      setUploadProgress(100);
-      
-      // Fixed: correctly parse res.data.metadata instead of res.data.studies
-      const meta = res.data.metadata || {};
-      setPatientData({
-        study_id: res.data.study_id || "",
-        name: meta.patient_name || "Unknown Patient",
-        id: meta.patient_id || "N/A",
-        age: meta.patient_age || 'Unknown',
-        sex: meta.patient_gender || 'Unknown',
-        modality: meta.modality || 'CT',
-        studyDate: meta.study_date ? new Date(meta.study_date).toLocaleDateString() : new Date().toLocaleDateString(),
-        instances_count: meta.instances_count || acceptedFiles.length
-      });
-
-      setIsExtracted(true);
-      fetchCases();
-    } catch (error) {
-      console.error('Upload failed:', error);
-      const serverMsg = error.response?.data?.detail || 'Upload failed. Please ensure the backend is running and CORS is configured correctly.';
-      alert('Upload Error: ' + serverMsg);
-      setUploadProgress(0);
-    }
-  }, [fetchCases]);
-
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
 
   const handleDiscard = () => {
     setIsExtracted(false);
@@ -409,147 +364,159 @@ const CaseTimeline = ({ doctor, onLogout }) => {
         </main>
       </div>
 
-      {/* Upload Modal */}
-      {showUploadModal && (
+      {/* Upload Type Modal (Dark Theme UI) */}
+      <UploadTypeModal
+        isOpen={showUploadModal && !isExtracted}
+        onClose={() => {
+          setShowUploadModal(false);
+          setUploadProgress(0);
+        }}
+        onUploadSuccess={(data) => {
+          setShowUploadModal(false);
+          const meta = data?.metadata || {};
+          setPatientData({
+            study_id: data?.study_id || "",
+            name: meta.patient_name || "Unknown Patient",
+            id: meta.patient_id || "N/A",
+            age: meta.patient_age || 'Unknown',
+            sex: meta.patient_gender || 'Unknown',
+            modality: meta.modality || 'CT',
+            studyDate: meta.study_date ? new Date(meta.study_date).toLocaleDateString() : new Date().toLocaleDateString(),
+            instances_count: meta.instances_count || 1
+          });
+          setIsExtracted(true);
+          fetchCases();
+        }}
+      />
+
+      {/* Extracted Case & Token Generation Modal */}
+      {isExtracted && patientData && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
           <div className="w-full max-w-4xl space-y-6 my-8">
             <div className="flex justify-end relative z-10 w-full">
-               <button onClick={() => {setShowUploadModal(false); setIsExtracted(false); setUploadProgress(0);}} className="text-gray-500 bg-white rounded-full hover:text-gray-800 hover:bg-gray-100 w-10 h-10 flex border border-gray-200 items-center justify-center shadow-sm transition-colors">&times;</button>
+               <button onClick={handleDiscard} className="text-gray-500 bg-white rounded-full hover:text-gray-800 hover:bg-gray-100 w-10 h-10 flex border border-gray-200 items-center justify-center shadow-sm transition-colors">&times;</button>
             </div>
             
-            {!isExtracted && (
-              <div className="bg-white border border-gray-200 p-8 md:p-12 rounded-2xl shadow-xl relative -mt-10">
-                <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-                   <div className="bg-blue-50 text-blue-600 p-2 rounded-lg"><UploadCloud size={20}/></div>
-                   Secure Upload Portal
-                </h3>
-                <div {...getRootProps()} className={`border-2 border-dashed rounded-xl p-10 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 ${isDragActive ? 'border-blue-500 bg-blue-50/50 scale-[1.01]' : 'border-gray-300 hover:border-emerald-400 bg-gray-50'}`}>
-                  <input {...getInputProps()} />
-                  <div className="w-16 h-16 bg-white border border-gray-200 shadow-sm rounded-full flex items-center justify-center mb-4 text-blue-500">
-                    <QrCode size={28} />
+            <div className="bg-white border border-gray-200 rounded-2xl shadow-xl p-8 space-y-8 relative -mt-10">
+              <div className="flex flex-col md:flex-row justify-between items-start gap-4">
+                <div className="flex items-center gap-5">
+                  <div className="bg-emerald-50 text-emerald-600 p-5 rounded-xl font-bold text-2xl shadow-sm border border-emerald-100 flex items-center justify-center w-16 h-16">{patientData.name.charAt(0)}</div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-2 flex items-center gap-3">
+                      {patientData.name} 
+                      <span className="text-xs font-bold text-gray-600 bg-gray-100 px-2.5 py-1 rounded border border-gray-200 tracking-wider">ID: {patientData.id}</span>
+                    </h2>
+                    <div className="mt-2 text-sm text-gray-600 flex flex-wrap gap-x-6 gap-y-2 font-medium">
+                      <span className="flex items-center gap-1.5"><span className="text-gray-500">Age:</span> <span className="text-gray-900">{patientData.age}</span></span>
+                      <span className="flex items-center gap-1.5"><span className="text-gray-500">Sex:</span> <span className="text-gray-900">{patientData.sex}</span></span>
+                      <span className="flex items-center gap-1.5"><span className="text-gray-500">Modality:</span> <span className={`px-2 py-0.5 rounded text-xs font-bold border ${getModalityColor(patientData.modality)}`}>{patientData.modality}</span></span>
+                      <span className="flex items-center gap-1.5"><span className="text-gray-500">Date:</span> <span className="text-gray-900">{patientData.studyDate}</span></span>
+                      {patientData.instances_count !== undefined && (
+                         <span className="flex items-center gap-1.5"><span className="text-gray-500 text-xs flex items-center"><FileImage size={12} className="mr-1"/> Images:</span> <span className="text-emerald-500 font-bold">{patientData.instances_count}</span></span>
+                      )}
+                    </div>
                   </div>
-                  <p className="text-gray-800 font-medium text-lg">Drag & drop raw DICOM folders or ZIP files here</p>
-                  <p className="text-sm text-gray-500 mt-2">Supports up to 2GB per upload session</p>
+                </div>
+                <div className="flex justify-end w-full md:w-auto">
+                  <span className="bg-emerald-50 text-emerald-600 px-3 py-1.5 rounded-full text-xs font-bold border border-emerald-200 flex items-center gap-2 uppercase tracking-wide shadow-sm"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Extracted</span>
+                </div>
+              </div>
+
+              <hr className="border-gray-200" />
+
+              <div>
+                <h4 className="text-[11px] font-bold text-gray-500 mb-4 flex items-center gap-2 tracking-widest uppercase"><FileImage size={14}/> Image Gallery</h4>
+                <div className="relative group">
+                  <div className="flex gap-4 overflow-x-auto pb-4 items-center">
+                    {[1,2,3,4,5,6].map(thumb => (
+                      <div key={thumb} className="flex-shrink-0 w-[140px] h-[140px] bg-gray-50 border border-gray-200 rounded-lg flex items-center justify-center cursor-pointer hover:border-blue-400 hover:ring-1 hover:ring-blue-400 transition-all shadow-sm overflow-hidden relative group/item">
+                         <svg className="w-10 h-10 text-gray-400 group-hover/item:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                         <div className="absolute bottom-2 right-2 bg-white text-gray-600 text-[10px] font-bold px-1.5 py-0.5 rounded border border-gray-200 shadow-sm">IMG {thumb}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              
+              <hr className="border-gray-200" />
+              
+              <div>
+                <div className="flex justify-between items-center mb-4">
+                   <h4 className="text-[11px] font-bold text-gray-500 flex items-center gap-2 tracking-widest uppercase"><Share2 size={14}/> Collaboration & Sharing</h4>
+                   <button onClick={handleDiscard} className="text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-full text-xs font-bold transition-colors flex items-center gap-2 border border-rose-200"><Trash2 size={14}/> Discard Case</button>
                 </div>
                 
-                {uploadProgress > 0 && uploadProgress < 100 && (
-                  <div className="mt-8">
-                    <div className="flex justify-between text-sm text-gray-600 mb-2 font-medium">
-                      <span className="text-blue-500 flex items-center gap-2"><div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div> Uploading & Processing...</span>
-                      <span className="text-gray-900 bg-gray-100 px-2 py-0.5 rounded font-mono border border-gray-200">{uploadProgress}%</span>
-                    </div>
-                    <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden border border-gray-200">
-                      <div className="bg-gradient-to-r from-blue-500 to-emerald-500 h-2.5 rounded-full transition-all duration-500 shadow-sm relative" style={{ width: `${uploadProgress}%` }}>
-                        <div className="absolute inset-0 bg-white/20 w-full"></div>
+                {!generatedToken ? (
+                   <div className="bg-gray-50/50 border border-gray-200 p-6 rounded-xl flex flex-col items-center justify-center max-w-xl mx-auto space-y-4">
+                      <div className="flex w-full gap-4">
+                         <div className="flex-1 relative">
+                            <select 
+                               value={expiry} 
+                               onChange={(e) => setExpiry(e.target.value)}
+                               className="w-full bg-white border border-gray-200 text-gray-700 p-3.5 rounded-lg appearance-none text-sm focus:outline-none focus:border-blue-500 font-semibold shadow-sm"
+                            >
+                               <option>7 Days Activity</option>
+                               <option>14 Days Activity</option>
+                               <option>Close Immediately</option>
+                            </select>
+                            <Clock size={16} className="absolute right-4 top-4 text-gray-400" pointerEvents="none"/>
+                            <label className="absolute -top-2 left-3 bg-white px-1 text-[10px] uppercase font-bold text-gray-500">Token Expiry</label>
+                         </div>
+                         <div className="flex-1 relative">
+                            <input 
+                               type="text" 
+                               value={linkPasscode} 
+                               onChange={(e) => setLinkPasscode(e.target.value)} 
+                               placeholder="Optional Passcode" 
+                               className="w-full bg-white border border-gray-200 p-3.5 rounded-lg text-sm focus:outline-none focus:border-blue-500 shadow-sm"
+                            />
+                            <label className="absolute -top-2 left-3 bg-white px-1 text-[10px] uppercase font-bold text-gray-500">Passcode Protection</label>
+                         </div>
                       </div>
-                    </div>
-                  </div>
+                      <button 
+                         onClick={generateLink} 
+                         disabled={isGenerating} 
+                         className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold p-3.5 rounded-lg text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                      >
+                         {isGenerating ? <Loader2 className="animate-spin" size={16}/> : <LinkIcon size={16}/>}
+                         Generate Secure View Link
+                      </button>
+                   </div>
+                ) : (
+                   <div className="space-y-4 max-w-xl mx-auto">
+                      <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 p-2.5 rounded-lg">
+                         <input 
+                            type="text" 
+                            readOnly 
+                            value={`${window.location.origin}/view/${generatedToken}`} 
+                            className="bg-transparent border-none text-xs text-emerald-800 font-mono flex-1 focus:outline-none select-all"
+                         />
+                         <button 
+                            onClick={copyToClipboard} 
+                            className="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-md text-xs font-bold transition-colors flex items-center gap-1 shadow-sm"
+                         >
+                            {copiedKey ? <Check size={14}/> : <Copy size={14}/>}
+                            {copiedKey ? 'Copied' : 'Copy'}
+                         </button>
+                      </div>
+                      <div className="grid grid-cols-3 gap-3">
+                         <button onClick={() => window.open(`${window.location.origin}/view/${generatedToken}`, '_blank')} className="flex flex-col items-center justify-center p-4 h-full rounded-lg bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all border border-gray-200 font-semibold text-sm group shadow-sm">
+                            <ChevronRight size={20} className="mb-2 text-gray-400 group-hover:text-emerald-500 transition-colors" />
+                            Open View
+                         </button>
+                         <a href={`https://wa.me/?text=${encodeURIComponent(`Hello ${patientData.name}, your study is ready. View it here: ${window.location.origin}/view/${generatedToken} ${linkPasscode ? `(Passcode: ${linkPasscode})` : ''}`)}`} target="_blank" rel="noreferrer" className="flex flex-col items-center justify-center p-4 h-full rounded-lg bg-white text-gray-600 hover:bg-[#25D366]/10 hover:text-[#25D366] hover:border-[#25D366]/30 transition-all border border-gray-200 font-semibold text-sm group shadow-sm">
+                            <MessageSquare size={20} className="mb-2 text-gray-400 group-hover:text-[#25D366] transition-colors" />
+                            WhatsApp
+                         </a>
+                         <a href={`mailto:?subject=Your Radiology Study is Ready&body=${encodeURIComponent(`Hello ${patientData.name}, your study is ready.\nView securely: ${window.location.origin}/view/${generatedToken} \n${linkPasscode ? `(Passcode: ${linkPasscode})` : ''}`)}`} className="flex flex-col items-center justify-center p-4 h-full rounded-lg bg-white text-gray-600 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-all border border-gray-200 font-semibold text-sm group shadow-sm">
+                            <Mail size={20} className="mb-2 text-gray-400 group-hover:text-blue-500 transition-colors" />
+                            Email Link
+                         </a>
+                      </div>
+                   </div>
                 )}
               </div>
-            )}
-
-            {isExtracted && patientData && (
-              <div className="bg-white border border-gray-200 rounded-2xl shadow-xl p-8 space-y-8 relative -mt-10">
-                <div className="flex flex-col md:flex-row justify-between items-start gap-4">
-                  <div className="flex items-center gap-5">
-                    <div className="bg-emerald-50 text-emerald-600 p-5 rounded-xl font-bold text-2xl shadow-sm border border-emerald-100 flex items-center justify-center w-16 h-16">{patientData.name.charAt(0)}</div>
-                    <div>
-                      <h2 className="text-2xl font-bold text-gray-900 mb-2 flex items-center gap-3">
-                        {patientData.name} 
-                        <span className="text-xs font-bold text-gray-600 bg-gray-100 px-2.5 py-1 rounded border border-gray-200 tracking-wider">ID: {patientData.id}</span>
-                      </h2>
-                      <div className="mt-2 text-sm text-gray-600 flex flex-wrap gap-x-6 gap-y-2 font-medium">
-                        <span className="flex items-center gap-1.5"><span className="text-gray-500">Age:</span> <span className="text-gray-900">{patientData.age}</span></span>
-                        <span className="flex items-center gap-1.5"><span className="text-gray-500">Sex:</span> <span className="text-gray-900">{patientData.sex}</span></span>
-                        <span className="flex items-center gap-1.5"><span className="text-gray-500">Modality:</span> <span className={`px-2 py-0.5 rounded text-xs font-bold border ${getModalityColor(patientData.modality)}`}>{patientData.modality}</span></span>
-                        <span className="flex items-center gap-1.5"><span className="text-gray-500">Date:</span> <span className="text-gray-900">{patientData.studyDate}</span></span>
-                        {patientData.instances_count !== undefined && (
-                           <span className="flex items-center gap-1.5"><span className="text-gray-500 text-xs flex items-center"><FileImage size={12} className="mr-1"/> Images:</span> <span className="text-emerald-500 font-bold">{patientData.instances_count}</span></span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex justify-end w-full md:w-auto">
-                    <span className="bg-emerald-50 text-emerald-600 px-3 py-1.5 rounded-full text-xs font-bold border border-emerald-200 flex items-center gap-2 uppercase tracking-wide shadow-sm"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Extracted</span>
-                  </div>
-                </div>
-
-                <hr className="border-gray-200" />
-
-                <div>
-                  <h4 className="text-[11px] font-bold text-gray-500 mb-4 flex items-center gap-2 tracking-widest uppercase"><FileImage size={14}/> Image Gallery</h4>
-                  <div className="relative group">
-                    <div className="flex gap-4 overflow-x-auto pb-4 items-center">
-                      {[1,2,3,4,5,6].map(thumb => (
-                        <div key={thumb} className="flex-shrink-0 w-[140px] h-[140px] bg-gray-50 border border-gray-200 rounded-lg flex items-center justify-center cursor-pointer hover:border-blue-400 hover:ring-1 hover:ring-blue-400 transition-all shadow-sm overflow-hidden relative group/item">
-                           <svg className="w-10 h-10 text-gray-400 group-hover/item:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                           <div className="absolute bottom-2 right-2 bg-white text-gray-600 text-[10px] font-bold px-1.5 py-0.5 rounded border border-gray-200 shadow-sm">IMG {thumb}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                
-                <hr className="border-gray-200" />
-                
-                <div>
-                  <div className="flex justify-between items-center mb-4">
-                     <h4 className="text-[11px] font-bold text-gray-500 flex items-center gap-2 tracking-widest uppercase"><Share2 size={14}/> Collaboration & Sharing</h4>
-                     <button onClick={handleDiscard} className="text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-full text-xs font-bold transition-colors flex items-center gap-2 border border-rose-200"><Trash2 size={14}/> Discard Case</button>
-                  </div>
-                  
-                  {!generatedToken ? (
-                     <div className="bg-gray-50/50 border border-gray-200 p-6 rounded-xl flex flex-col items-center justify-center max-w-xl mx-auto space-y-4">
-                        <div className="flex w-full gap-4">
-                           <div className="flex-1 relative">
-                              <select 
-                                 value={expiry} 
-                                 onChange={(e) => setExpiry(e.target.value)}
-                                 className="w-full bg-white border border-gray-200 text-gray-700 p-3.5 rounded-lg appearance-none text-sm focus:outline-none focus:border-blue-500 font-semibold shadow-sm"
-                              >
-                                 <option>7 Days Activity</option>
-                                 <option>14 Days Activity</option>
-                                 <option>Close Immediately</option>
-                              </select>
-                              <Clock size={16} className="absolute right-4 top-4 text-gray-400" pointerEvents="none"/>
-                              <label className="absolute -top-2 left-3 bg-white px-1 text-[10px] uppercase font-bold text-gray-500">Token Expiry</label>
-                           </div>
-                           <div className="flex-1 relative">
-                              <input 
-                                 type="text" 
-                                 value={linkPasscode}
-                                 onChange={(e) => setLinkPasscode(e.target.value)}
-                                 placeholder="Optional Passcode"
-                                 className="w-full bg-white border border-gray-200 shadow-sm text-gray-700 p-3.5 rounded-lg text-sm focus:outline-none focus:border-blue-500 font-semibold"
-                              />
-                              <ShieldAlert size={16} className="absolute right-4 top-4 text-gray-400" pointerEvents="none"/>
-                              <label className="absolute -top-2 left-3 bg-white px-1 text-[10px] uppercase font-bold text-gray-500">Access Control</label>
-                           </div>
-                        </div>
-                        <button onClick={generateLink} disabled={isGenerating} className="w-full bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-bold p-3.5 rounded-lg shadow-sm transition-all flex items-center justify-center gap-2 hover:shadow-md">
-                           {isGenerating ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <LinkIcon size={18}/>}
-                           Save Case & Generate Secure Link
-                        </button>
-                     </div>
-                  ) : (
-                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <button onClick={copyToClipboard} className={`flex flex-col items-center justify-center p-4 h-full rounded-lg transition-all border font-semibold text-sm group shadow-sm ${copiedKey ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-white border-gray-200 text-blue-600 hover:bg-blue-50'}`}>
-                           {copiedKey ? <Check size={20} className="mb-2" /> : <Copy size={20} className="mb-2" />}
-                           {copiedKey ? 'Link Copied!' : 'Copy Secure Link'}
-                        </button>
-                        <a href={`https://wa.me/?text=${encodeURIComponent(`Hello ${patientData.name}, your study is ready. View it here: ${window.location.origin}/view/${generatedToken} ${linkPasscode ? `(Passcode: ${linkPasscode})` : ''}`)}`} target="_blank" rel="noreferrer" className="flex flex-col items-center justify-center p-4 h-full rounded-lg bg-white text-gray-600 hover:bg-[#25D366]/10 hover:text-[#25D366] hover:border-[#25D366]/30 transition-all border border-gray-200 font-semibold text-sm group shadow-sm">
-                           <MessageSquare size={20} className="mb-2 text-gray-400 group-hover:text-[#25D366] transition-colors" />
-                           WhatsApp
-                        </a>
-                        <a href={`mailto:?subject=Your Radiology Study is Ready&body=${encodeURIComponent(`Hello ${patientData.name}, your study is ready.\nView securely: ${window.location.origin}/view/${generatedToken} \n${linkPasscode ? `(Passcode: ${linkPasscode})` : ''}`)}`} className="flex flex-col items-center justify-center p-4 h-full rounded-lg bg-white text-gray-600 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-all border border-gray-200 font-semibold text-sm group shadow-sm">
-                           <Mail size={20} className="mb-2 text-gray-400 group-hover:text-blue-500 transition-colors" />
-                           Email Link
-                        </a>
-                     </div>
-                  )}
-                </div>
-              </div>
-            )}
+            </div>
           </div>
         </div>
       )}
