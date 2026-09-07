@@ -319,9 +319,15 @@ const CaseTimeline = ({ doctor, onLogout }) => {
                        key={c.id} 
                        className="grid grid-cols-12 border-b border-gray-100 p-4 text-sm font-medium text-gray-800 bg-white hover:bg-emerald-50/30 transition-all items-center group cursor-pointer pl-6"
                        style={{ animationDelay: `${index * 30}ms` }}
-                       onClick={() => c.orthanc_study_uuid && window.open(`${PACS_URL}/osimis-viewer/app/index.html?study=${c.orthanc_study_uuid}`, '_blank')}
-
+                       onClick={() => {
+                         if (c.study_instance_uid) {
+                           window.open(`${PACS_URL}/ohif/viewer?url=/dicom-web/studies/${c.study_instance_uid}`, '_blank');
+                         } else if (c.orthanc_study_uuid) {
+                           window.open(`${PACS_URL}/osimis-viewer/app/index.html?study=${c.orthanc_study_uuid}`, '_blank');
+                         }
+                       }}
                      >
+
                         <div className="col-span-1 items-center justify-start flex">
                            <input type="checkbox" className="w-3.5 h-3.5 rounded border-gray-300 text-emerald-500 focus:ring-emerald-500 accent-emerald-500 cursor-pointer" onClick={(e)=>e.stopPropagation()} />
                         </div>

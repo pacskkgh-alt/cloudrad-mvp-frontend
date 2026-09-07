@@ -171,9 +171,9 @@ export default function PatientViewPage() {
             <h3 className="text-lg font-bold mb-2">High-Res Imaging</h3>
             <p className="text-sm text-gray-400 mb-6">Access the full diagnostic quality imagery via OHIF viewer.</p>
             <a 
-              href={studyInfo?.orthanc_study_uuid ? `${PACS_URL}/osimis-viewer/app/index.html?study=${studyInfo.orthanc_study_uuid}` : '#'}
-
+              href={studyInfo?.study_instance_uid ? `${PACS_URL}/ohif/viewer?url=/dicom-web/studies/${studyInfo.study_instance_uid}` : (studyInfo?.orthanc_study_uuid ? `${PACS_URL}/osimis-viewer/app/index.html?study=${studyInfo.orthanc_study_uuid}` : '#')}
               target="_blank" 
+ 
               rel="noopener"
               className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-3 rounded-lg font-bold shadow-lg transition-colors border border-blue-400"
             >
