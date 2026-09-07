@@ -1,13 +1,11 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Users, File, Building, LogOut, Plus, Trash2, User } from 'lucide-react';
 import axios from 'axios';
+import { getApiUrl, getAuthHeaders } from '../api';
 
-const API_URL = import.meta.env.VITE_BACKEND_URL || 'https://api.165-227-89-199.nip.io';
+const API_URL = getApiUrl();
 
-function getAuthHeaders() {
-  const token = localStorage.getItem('cloudrad_token');
-  return { Authorization: `Bearer ${token}` };
-}
+
 
 export default function AdminDashboard({ doctor, onLogout }) {
   const darkMode = true; // PacsBin aesthetic strict dark mode
@@ -141,7 +139,7 @@ export default function AdminDashboard({ doctor, onLogout }) {
                 <td className="p-4"><span className={`px-3 py-1 rounded-full text-xs font-bold border ${u.is_active ? 'bg-green-500/10 text-green-500 border-green-500/20' : 'bg-red-500/10 text-red-500 border-red-500/20'}`}>{u.is_active ? 'نشط' : 'معطل'}</span></td>
                 <td className="p-4 text-slate-400">{clinics.find(c => c.id === u.clinic_id)?.name || 'غير محدد (الفرع الرئيسي)'}</td>
                 <td className="p-4 flex gap-2 justify-end">
-                  <button onClick={() => handleToggleUser(u.id)} className={`p-2 rounded-lg transition-colors ${u.is_active ? 'bg-orange-500/10 text-orange-500 hover:bg-orange-500/20' : 'bg-green-500/10 text-green-500 hover:bg-green-500/20'}`} title={u.is_active ? "تعطيل החשבון" : "تفعيل الحساب"}>{u.is_active ? 'تعطيل' : 'تفعيل'}</button>
+                  <button onClick={() => handleToggleUser(u.id)} className={`p-2 rounded-lg transition-colors ${u.is_active ? 'bg-orange-500/10 text-orange-500 hover:bg-orange-500/20' : 'bg-green-500/10 text-green-500 hover:bg-green-500/20'}`} title={u.is_active ? "تعطيل الحساب" : "تفعيل الحساب"}>{u.is_active ? 'تعطيل' : 'تفعيل'}</button>
                   <button onClick={() => handleDeleteUser(u.id)} className="p-2 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500/20" title="حذف المستخدم"><Trash2 className="w-4 h-4" /></button>
                 </td>
               </tr>

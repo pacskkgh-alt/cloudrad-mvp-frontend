@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import axios from 'axios';
+import { getApiUrl } from '../api';
 
 export default function LoginPage({ onLogin }) {
   const [email, setEmail] = useState('');
@@ -15,7 +16,7 @@ export default function LoginPage({ onLogin }) {
     setLoading(true);
 
     try {
-      const API_URL = import.meta.env.VITE_BACKEND_URL || 'https://api.165-227-89-199.nip.io';
+      const API_URL = getApiUrl();
           
       const res = await axios.post(`${API_URL}/api/auth/login`, { email, password });
       
@@ -45,8 +46,13 @@ export default function LoginPage({ onLogin }) {
   const handleGoogleSignIn = () => alert("Google Workspace Auth not yet configured.");
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50/50 font-sans selection:bg-emerald-500/30">
-      <div className="w-full max-w-[420px] p-8 sm:p-10 bg-white rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-white to-teal-50/30 font-sans selection:bg-emerald-500/30 relative overflow-hidden">
+      {/* Animated background shapes */}
+      <div className="absolute top-20 -left-20 w-72 h-72 bg-teal-200/20 rounded-full blur-3xl animate-pulse"></div>
+      <div className="absolute bottom-20 -right-20 w-96 h-96 bg-emerald-200/20 rounded-full blur-3xl" style={{animation: 'pulse 4s infinite'}}></div>
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-to-br from-teal-100/10 to-emerald-100/10 rounded-full blur-3xl"></div>
+      
+      <div className="w-full max-w-[420px] p-8 sm:p-10 bg-white/80 backdrop-blur-xl rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-white/80 relative overflow-hidden z-10" style={{animation: 'slideUp 0.5s ease-out'}}>
         
         {/* Subtle Background Accent */}
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-teal-400 to-emerald-500"></div>

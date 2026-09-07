@@ -1,18 +1,21 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import axios from 'axios';
+import { getApiUrl, getPacsUrl, getAuthHeaders, relativeTime, getModalityColor } from '../api';
 import { 
   Share2, Mail, QrCode, Clock, UploadCloud, MessageSquare, 
   FileImage, ChevronRight,
   Search, Plus, LogOut, Settings, HelpCircle, Trash2, ShieldAlert, Check, Copy, Link as LinkIcon,
-  Menu, Users, Target, Inbox, Trash, UserPlus, Video, Bell, MessageCircle, Calendar, Filter, Folder, MoreVertical
+  Menu, Users, Target, Inbox, Trash, UserPlus, Video, Bell, MessageCircle, Calendar, Filter, Folder, MoreVertical, Loader2
 } from 'lucide-react';
 
-const PACS_URL = import.meta.env.VITE_PACS_URL || 'https://pacs.165-227-89-199.nip.io';
+const API_URL = getApiUrl();
+const PACS_URL = getPacsUrl();
 
 const CaseTimeline = ({ doctor, onLogout }) => {
   const [cases, setCases] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
   
   // Modal Overlays
   const [showSettingsModal, setShowSettingsModal] = useState(false);
@@ -31,19 +34,11 @@ const CaseTimeline = ({ doctor, onLogout }) => {
   const [generatedToken, setGeneratedToken] = useState(null);
   const [copiedKey, setCopiedKey] = useState(false);
 
-  const fetchCases = async () => {
+  const fetchCases = useCallback(async () => {
     try {
       setLoading(true);
-      const host = window.location.hostname;
-      const baseUrl = import.meta.env.VITE_BACKEND_URL || (host === 'localhost' || host === '127.0.0.1' 
-        ? 'http://127.0.0.1:8000' 
-        : 'https://api.165-227-89-199.nip.io');
-      const apiUrl = `${baseUrl}/api/studies`;
-
-      const response = await axios.get(apiUrl, {
-        headers: {
-          'Authorization': 'Bearer ' + localStorage.getItem('cloudrad_token')
-        }
+      const response = await axios.get(`${API_URL}/api/studies`, {
+        headers: getAuthHeaders()
       });
       setCases(response.data);
     } catch (error) {
@@ -51,25 +46,17 @@ const CaseTimeline = ({ doctor, onLogout }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchCases();
-  }, []);
+  }, [fetchCases]);
 
   const deleteStudy = async (studyId) => {
     if(!window.confirm("Are you sure you want to delete this case?")) return;
     try {
-      const host = window.location.hostname;
-      const baseUrl = import.meta.env.VITE_BACKEND_URL || (host === 'localhost' || host === '127.0.0.1' 
-        ? 'http://127.0.0.1:8000' 
-        : 'https://api.165-227-89-199.nip.io');
-      const apiUrl = `${baseUrl}/api/studies/${studyId}`;
-
-      await axios.delete(apiUrl, {
-        headers: {
-          'Authorization': 'Bearer ' + localStorage.getItem('cloudrad_token')
-        }
+      await axios.delete(`${API_URL}/api/studies/${studyId}`, {
+        headers: getAuthHeaders()
       });
       fetchCases();
     } catch (err) {
@@ -89,16 +76,8 @@ const CaseTimeline = ({ doctor, onLogout }) => {
     });
 
     try {
-      const host = window.location.hostname;
-      const baseUrl = import.meta.env.VITE_BACKEND_URL || (host === 'localhost' || host === '127.0.0.1' 
-        ? 'http://127.0.0.1:8000' 
-        : 'https://api.165-227-89-199.nip.io');
-      const apiUrl = `${baseUrl}/api/upload`;
-
-      const res = await axios.post(apiUrl, formData, {
-        headers: {
-          'Authorization': 'Bearer ' + localStorage.getItem('cloudrad_token')
-        },
+      const res = await axios.post(`${API_URL}/api/upload`, formData, {
+        headers: getAuthHeaders(),
         onUploadProgress: (progressEvent) => {
           const percentCompleted = Math.round((progressEvent.loaded * 90) / progressEvent.total);
           setUploadProgress(10 + percentCompleted);
@@ -107,19 +86,17 @@ const CaseTimeline = ({ doctor, onLogout }) => {
       
       setUploadProgress(100);
       
-      const instances = res.data.studies && res.data.studies.length > 0 
-          ? res.data.studies[0].instances_count 
-          : acceptedFiles.length;
-
+      // Fixed: correctly parse res.data.metadata instead of res.data.studies
+      const meta = res.data.metadata || {};
       setPatientData({
         study_id: res.data.study_id || "",
-        name: res.data.patient_name || "Anonymized Patient",
-        id: res.data.patient_id || "PX-" + Math.floor(Math.random()*10000),
-        age: 'Unknown',
-        sex: 'Unknown',
-        modality: res.data.studies && res.data.studies.length > 0 ? res.data.studies[0].modality : 'CT',
-        studyDate: new Date().toLocaleDateString(),
-        instances_count: instances
+        name: meta.patient_name || "Unknown Patient",
+        id: meta.patient_id || "N/A",
+        age: meta.patient_age || 'Unknown',
+        sex: meta.patient_gender || 'Unknown',
+        modality: meta.modality || 'CT',
+        studyDate: meta.study_date ? new Date(meta.study_date).toLocaleDateString() : new Date().toLocaleDateString(),
+        instances_count: meta.instances_count || acceptedFiles.length
       });
 
       setIsExtracted(true);
@@ -127,7 +104,7 @@ const CaseTimeline = ({ doctor, onLogout }) => {
     } catch (error) {
       console.error('Upload failed:', error);
       const serverMsg = error.response?.data?.detail || 'Upload failed. Please ensure the backend is running and CORS is configured correctly.';
-      alert('Upload Error from Server: ' + serverMsg);
+      alert('Upload Error: ' + serverMsg);
       setUploadProgress(0);
     }
   }, [fetchCases]);
@@ -141,18 +118,6 @@ const CaseTimeline = ({ doctor, onLogout }) => {
     setPatientData(null);
     setGeneratedToken(null);
   };
-
-  const handleExamsClick = () => alert("Exams view coming soon!");
-  const handleInboxClick = () => alert("Inbox feature coming soon!");
-  const handleTrashClick = () => alert("Trash view coming soon!");
-  const handleGlobalShareClick = () => alert("Global share settings coming soon!");
-  const handleVideoClick = () => alert("Video consultation feature coming soon!");
-  const handleInviteClick = () => alert("Invite feature coming soon!");
-  const handleNotificationsClick = () => alert("Notifications coming soon!");
-  const handleMessagesClick = () => alert("Messages coming soon!");
-  const handleMyCasesClick = () => alert("Switching to My Cases view");
-  const handleRecentCaseClick = () => alert("Opening recent case...");
-  const handleAdvancedFiltersClick = () => alert("Advanced filters coming soon!");
 
   const openShareModal = (study) => {
     setPatientData({
@@ -168,23 +133,18 @@ const CaseTimeline = ({ doctor, onLogout }) => {
   const generateLink = async () => {
     setIsGenerating(true);
     try {
-      const host = window.location.hostname;
-      const baseUrl = import.meta.env.VITE_BACKEND_URL || (host === 'localhost' || host === '127.0.0.1' 
-        ? 'http://127.0.0.1:8000' 
-        : 'https://api.165-227-89-199.nip.io');
-        
       let expiryDays = 7;
       if (expiry.includes('14')) expiryDays = 14;
       else if (expiry.includes('Immediately')) expiryDays = 0;
 
-      const res = await axios.post(`${baseUrl}/api/links/`, {
+      const res = await axios.post(`${API_URL}/api/links/`, {
         study_id: patientData.study_id,
         duration_days: expiryDays > 0 ? expiryDays : null,
         passcode: linkPasscode ? linkPasscode.trim() : null,
         allows_download: true,
         is_anonymized: false
       }, {
-        headers: { 'Authorization': 'Bearer ' + localStorage.getItem('cloudrad_token') }
+        headers: getAuthHeaders()
       });
       
       setGeneratedToken(res.data.token);
@@ -211,22 +171,31 @@ const CaseTimeline = ({ doctor, onLogout }) => {
   };
 
   const userName = doctor?.name || "Dr. Demo";
+  
+  // Filter cases by search query
+  const filteredCases = cases.filter(c => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return (c.patient_name || '').toLowerCase().includes(q) ||
+           (c.patient_id_number || '').toLowerCase().includes(q) ||
+           (c.modality || '').toLowerCase().includes(q);
+  });
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-800 font-sans flex overflow-hidden">
       
       {/* 1. Left Sidebar (Icon only) */}
       <aside className="w-16 bg-white border-r border-gray-200 flex flex-col items-center py-4 flex-shrink-0 z-20">
-        <button className="text-gray-500 hover:text-gray-800 mb-8"><Menu size={24} /></button>
+        <button className="text-gray-500 hover:text-gray-800 mb-8 transition-colors"><Menu size={24} /></button>
         
         <div className="flex flex-col gap-6 w-full items-center">
            <div className="w-full flex justify-center py-2 relative">
               <div className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-500 rounded-r-md"></div>
               <button className="text-emerald-500 bg-emerald-50 p-2 rounded-lg" title="Cases"><Users size={20}/></button>
            </div>
-           <button onClick={handleExamsClick} className="text-gray-400 hover:text-gray-600 p-2"><Target size={20} title="Exams"/></button>
-           <button onClick={handleInboxClick} className="text-gray-400 hover:text-gray-600 p-2"><Inbox size={20} title="Inbox"/></button>
-           <button onClick={handleTrashClick} className="text-gray-400 hover:text-gray-600 p-2"><Trash size={20} title="Trash"/></button>
+           <button className="text-gray-400 hover:text-gray-600 p-2 transition-colors"><Target size={20} title="Exams"/></button>
+           <button className="text-gray-400 hover:text-gray-600 p-2 transition-colors"><Inbox size={20} title="Inbox"/></button>
+           <button className="text-gray-400 hover:text-gray-600 p-2 transition-colors"><Trash size={20} title="Trash"/></button>
            <button onClick={() => setShowSettingsModal(true)} className="text-gray-400 hover:text-emerald-600 p-2 transition-colors"><Settings size={20} title="Settings"/></button>
            <button onClick={() => setShowHelpModal(true)} className="text-gray-400 hover:text-blue-600 p-2 transition-colors"><HelpCircle size={20} title="Help"/></button>
         </div>
@@ -243,28 +212,28 @@ const CaseTimeline = ({ doctor, onLogout }) => {
             <div className="h-6 w-px bg-gray-200"></div>
 
             <button className="flex items-center gap-2 text-sm font-medium text-gray-700 bg-gray-100/50 hover:bg-gray-100 px-4 py-2 rounded-full transition-colors border border-gray-200 shadow-sm">
-               <div className="w-5 h-5 rounded-full bg-gray-400 flex items-center justify-center text-white text-[10px]">A</div>
-               Austin Oncology (Demo)
+               <div className="w-5 h-5 rounded-full bg-teal-500 flex items-center justify-center text-white text-[10px] font-bold">C</div>
+               CloudRad Medical
                <ChevronRight size={14} className="rotate-90 text-gray-500 ml-1"/>
             </button>
           </div>
 
           <div className="flex items-center gap-4">
-            <button onClick={handleGlobalShareClick} className="p-2 text-blue-500 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors" title="Share"><Share2 size={18} /></button>
-            <button onClick={handleVideoClick} className="p-2 text-fuchsia-500 bg-fuchsia-100/50 rounded-lg hover:bg-fuchsia-100 transition-colors" title="Video"><Video size={18} /></button>
-            <button onClick={handleInviteClick} className="flex items-center gap-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 px-4 py-2 rounded-lg text-sm font-bold transition-colors">
+            <button className="p-2 text-blue-500 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors" title="Share"><Share2 size={18} /></button>
+            <button className="p-2 text-fuchsia-500 bg-fuchsia-100/50 rounded-lg hover:bg-fuchsia-100 transition-colors" title="Video"><Video size={18} /></button>
+            <button className="flex items-center gap-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 px-4 py-2 rounded-lg text-sm font-bold transition-colors">
                <UserPlus size={16} />
-               Invite to CloudRad
+               Invite
             </button>
             
             <div className="h-6 w-px bg-gray-200 mx-2"></div>
             
-            <button onClick={handleNotificationsClick} className="text-gray-500 hover:text-gray-800 p-1.5 transition-colors"><Bell size={20}/></button>
-            <button onClick={handleMessagesClick} className="text-gray-500 hover:text-gray-800 p-1.5 transition-colors"><MessageCircle size={20}/></button>
+            <button className="text-gray-500 hover:text-gray-800 p-1.5 transition-colors relative"><Bell size={20}/></button>
+            <button className="text-gray-500 hover:text-gray-800 p-1.5 transition-colors"><MessageCircle size={20}/></button>
             
             <div className="flex items-center gap-2 ml-2 cursor-pointer border border-gray-200 pl-2 pr-4 py-1.5 rounded-full shadow-sm hover:shadow transition-all bg-white">
-               <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold overflow-hidden">
-                  <img src="https://i.pravatar.cc/150?img=11" alt="Profile" className="w-full h-full object-cover" />
+               <div className="w-7 h-7 rounded-full bg-teal-500 flex items-center justify-center text-white text-xs font-bold overflow-hidden">
+                  {userName.charAt(0).toUpperCase()}
                </div>
                <span className="text-sm font-semibold text-gray-700">{userName}</span>
             </div>
@@ -278,17 +247,14 @@ const CaseTimeline = ({ doctor, onLogout }) => {
           {/* Tabs & New Case Row */}
           <div className="flex justify-between items-end border-b border-gray-200 mb-6">
              <div className="flex bg-gray-50/50 pl-2 pt-2 rounded-tl-xl border-l border-t border-gray-200 gap-1.5">
-                <button onClick={handleMyCasesClick} className="px-6 py-2.5 bg-white border-t-2 border-t-emerald-500 border-l border-r border-gray-200 font-bold text-sm text-gray-900 rounded-t-lg shadow-[0_-2px_10px_rgba(0,0,0,0.03)] flex items-center gap-2">
+                <button className="px-6 py-2.5 bg-white border-t-2 border-t-emerald-500 border-l border-r border-gray-200 font-bold text-sm text-gray-900 rounded-t-lg shadow-[0_-2px_10px_rgba(0,0,0,0.03)] flex items-center gap-2">
                    <Users size={16} className="text-gray-800"/>
                    My Cases
-                </button>
-                <button onClick={handleRecentCaseClick} className="px-6 py-2.5 text-sm text-gray-500 font-medium hover:text-gray-800 hover:bg-white rounded-t-lg transition-colors flex items-center gap-2">
-                   Anonymized00003 <span className="text-gray-400 hover:text-rose-500">&times;</span>
                 </button>
              </div>
 
              <div className="pb-3">
-                <button onClick={() => setShowUploadModal(true)} className="flex items-center gap-2 border border-emerald-500 text-emerald-600 bg-white hover:bg-emerald-50 px-5 py-2 rounded-full text-sm font-bold shadow-sm transition-all focus:ring-2 ring-emerald-200">
+                <button onClick={() => setShowUploadModal(true)} className="flex items-center gap-2 border border-emerald-500 text-emerald-600 bg-white hover:bg-emerald-50 px-5 py-2 rounded-full text-sm font-bold shadow-sm transition-all focus:ring-2 ring-emerald-200 hover:shadow-md hover:-translate-y-0.5">
                    <Plus size={16} strokeWidth={3}/> New case
                 </button>
              </div>
@@ -299,22 +265,27 @@ const CaseTimeline = ({ doctor, onLogout }) => {
              <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                  <input type="text" placeholder="Search..." className="pl-9 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm w-48 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 bg-white shadow-sm font-medium" />
+                  <input 
+                    type="text" 
+                    placeholder="Search patients..." 
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm w-56 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 bg-white shadow-sm font-medium transition-all" 
+                  />
                 </div>
                 <input type="text" placeholder="Labels" className="px-4 py-2.5 border border-gray-200 rounded-lg text-sm w-32 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 bg-white shadow-sm font-medium" />
-                <input type="text" placeholder="Members" className="px-4 py-2.5 border border-gray-200 rounded-lg text-sm w-32 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 bg-white shadow-sm font-medium" />
                 <input type="text" placeholder="Institution name" className="px-4 py-2.5 border border-gray-200 rounded-lg text-sm w-40 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 bg-white shadow-sm font-medium" />
                 <div className="relative">
                    <input type="text" placeholder="Last modified" className="pl-4 pr-9 py-2.5 border border-gray-200 rounded-lg text-sm w-36 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 bg-white shadow-sm font-medium" />
                    <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
                 </div>
-                <button onClick={handleAdvancedFiltersClick} className="flex items-center gap-2 border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 px-4 py-2.5 rounded-lg text-sm shadow-sm transition-colors font-semibold">
+                <button className="flex items-center gap-2 border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 px-4 py-2.5 rounded-lg text-sm shadow-sm transition-colors font-semibold">
                    <Filter size={14}/> Advanced filters
                 </button>
              </div>
 
              <div className="text-xs font-bold text-gray-800 flex flex-col items-end">
-                <span>{cases.length} cases</span>
+                <span>{filteredCases.length} cases</span>
              </div>
           </div>
 
@@ -322,36 +293,46 @@ const CaseTimeline = ({ doctor, onLogout }) => {
           <div className="flex-1 overflow-hidden flex flex-col bg-white border border-gray-200 rounded-xl shadow-sm">
              <div className="grid grid-cols-12 border-b border-gray-200 p-4 text-[13px] font-bold text-gray-900 bg-white shrink-0 items-center pl-6">
                <div className="col-span-1 items-center justify-start flex"><input type="checkbox" className="w-3.5 h-3.5 rounded border-gray-300 text-emerald-500 focus:ring-emerald-500 accent-emerald-500 cursor-pointer" /></div>
-               <div className="col-span-4">Patient details</div>
+               <div className="col-span-3">Patient details</div>
                <div className="col-span-2">Patient ID</div>
-               <div className="col-span-2">Members</div>
+               <div className="col-span-2">Modality</div>
                <div className="col-span-1">Last update</div>
-               <div className="col-span-1">Created at</div>
-               <div className="col-span-1 text-right pr-2">Actions</div>
+               <div className="col-span-1">Study date</div>
+               <div className="col-span-2 text-right pr-2">Actions</div>
              </div>
              
              {loading ? (
-                <div className="flex-1 flex flex-col items-center justify-center text-gray-400 bg-gray-50/30">Loading cases...</div>
-             ) : cases.length === 0 ? (
-                <div className="flex-1 flex flex-col items-center justify-center text-gray-400 bg-gray-50/30">
+                <div className="flex-1 flex flex-col items-center justify-center text-gray-400 bg-gray-50/30 py-20">
+                   <Loader2 className="w-8 h-8 animate-spin text-emerald-500 mb-3" />
+                   <span className="text-sm font-medium">Loading cases...</span>
+                </div>
+             ) : filteredCases.length === 0 ? (
+                <div className="flex-1 flex flex-col items-center justify-center text-gray-400 bg-gray-50/30 py-20">
                    <Folder className="mb-3 text-gray-300" size={48} strokeWidth={1.5}/>
                    <p className="text-lg font-medium text-gray-500">No cases found</p>
+                   <p className="text-sm text-gray-400 mt-1">Upload DICOM files to get started</p>
                 </div>
              ) : (
                 <div className="flex-1 overflow-y-auto bg-gray-50/10">
-                   {cases.map((c) => (
-                     <div key={c.id} className="grid grid-cols-12 border-b border-gray-100 p-4 text-sm font-medium text-gray-800 bg-white hover:bg-gray-50 transition-colors items-center group cursor-pointer pl-6" onClick={() => window.open(`${PACS_URL}/app/explorer.html${c.orthanc_study_uuid ? '#study?uuid=' + c.orthanc_study_uuid : ''}`, '_blank')}>
+                   {filteredCases.map((c, index) => (
+                     <div 
+                       key={c.id} 
+                       className="grid grid-cols-12 border-b border-gray-100 p-4 text-sm font-medium text-gray-800 bg-white hover:bg-emerald-50/30 transition-all items-center group cursor-pointer pl-6"
+                       style={{ animationDelay: `${index * 30}ms` }}
+                       onClick={() => c.orthanc_study_uuid && window.open(`${PACS_URL}/osimis-viewer/app/index.html?study=${c.orthanc_study_uuid}`, '_blank')}
+
+                     >
                         <div className="col-span-1 items-center justify-start flex">
                            <input type="checkbox" className="w-3.5 h-3.5 rounded border-gray-300 text-emerald-500 focus:ring-emerald-500 accent-emerald-500 cursor-pointer" onClick={(e)=>e.stopPropagation()} />
                         </div>
                         
-                        <div className="col-span-4 flex items-center gap-4">
-                           <div className="w-14 h-14 rounded-lg bg-black border border-gray-200 flex items-center justify-center overflow-hidden shrink-0 relative">
-                              <span className="text-gray-100 text-3xl font-black font-serif italic z-10 opacity-80">M</span>
-                              <div className="absolute inset-0 bg-gradient-to-t from-gray-900 to-transparent"></div>
+                        <div className="col-span-3 flex items-center gap-4">
+                           <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-200 flex items-center justify-center overflow-hidden shrink-0 relative shadow-sm">
+                              <span className="text-gray-100 text-2xl font-black font-serif italic z-10 opacity-80">{(c.patient_name || 'U').charAt(0)}</span>
                            </div>
                            <div className="flex flex-col">
-                              <span className="text-gray-900 font-bold text-[15px]">{c.patient_name || 'Anonymized00003'}</span>
+                              <span className="text-gray-900 font-bold text-[15px] group-hover:text-emerald-700 transition-colors">{c.patient_name || 'Unknown'}</span>
+                              {c.has_report && <span className="text-[10px] text-emerald-500 font-bold mt-0.5 flex items-center gap-1"><Check size={10}/> Report ready</span>}
                            </div>
                         </div>
                         
@@ -360,29 +341,25 @@ const CaseTimeline = ({ doctor, onLogout }) => {
                         </div>
                         
                         <div className="col-span-2 flex items-center">
-                           <div className="flex -space-x-2 mr-2">
-                              {/* placeholder profiles */}
-                              <div className="w-8 h-8 rounded-full bg-blue-100 border-2 border-white flex justify-center items-center text-xs font-bold text-blue-600">J</div>
-                              <div className="w-8 h-8 rounded-full bg-emerald-100 border-2 border-white flex justify-center items-center text-xs font-bold text-emerald-600">S</div>
-                           </div>
-                           <span className="text-xs bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded font-bold border border-gray-200 shadow-sm">+1</span>
+                           <span className={`px-2.5 py-1 rounded-md text-xs font-bold border ${getModalityColor(c.modality)}`}>
+                             {c.modality || 'N/A'}
+                           </span>
                         </div>
                         
                         <div className="col-span-1 flex flex-col text-[12px]">
-                           <span className="text-gray-900 font-semibold mb-0.5">2 minutes ago</span>
-                           <span className="text-gray-500">{c.study_date ? new Date(c.study_date).toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'}) : 'N/A'}, 4:23 PM</span>
+                           <span className="text-gray-900 font-semibold mb-0.5">{relativeTime(c.created_at)}</span>
                         </div>
                         
-                        <div className="col-span-1 font-semibold text-gray-900 text-[13px]">
-                           {c.study_date ? new Date(c.study_date).toLocaleDateString('en-US', {month: 'numeric', day: 'numeric', year: 'numeric'}) : 'N/A'}
+                        <div className="col-span-1 font-semibold text-gray-600 text-[13px]">
+                           {c.study_date ? new Date(c.study_date).toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: '2-digit'}) : 'N/A'}
                         </div>
                         
-                        <div className="col-span-1 flex items-center justify-end gap-3 text-right pr-2">
-                           <button onClick={(e) => { e.stopPropagation(); openShareModal(c); }} className="border border-blue-200 bg-white text-blue-600 hover:bg-blue-50 px-3.5 py-1.5 rounded-full text-xs font-bold transition-colors flex items-center gap-1.5 shadow-sm">
+                        <div className="col-span-2 flex items-center justify-end gap-3 text-right pr-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                           <button onClick={(e) => { e.stopPropagation(); openShareModal(c); }} className="border border-blue-200 bg-white text-blue-600 hover:bg-blue-50 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm hover:shadow">
                               <Share2 size={14}/> Share
                            </button>
-                           <button onClick={(e) => { e.stopPropagation(); deleteStudy(c.id); }} className="text-gray-500 hover:text-gray-800 p-1 focus:outline-none">
-                              <MoreVertical size={18}/>
+                           <button onClick={(e) => { e.stopPropagation(); deleteStudy(c.id); }} className="text-gray-400 hover:text-rose-500 p-1.5 rounded-lg hover:bg-rose-50 transition-all focus:outline-none">
+                              <Trash2 size={16}/>
                            </button>
                         </div>
                      </div>
@@ -393,7 +370,7 @@ const CaseTimeline = ({ doctor, onLogout }) => {
         </main>
       </div>
 
-      {/* Modal / Extracted Patient Card Overlays */}
+      {/* Upload Modal */}
       {showUploadModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
           <div className="w-full max-w-4xl space-y-6 my-8">
@@ -407,27 +384,26 @@ const CaseTimeline = ({ doctor, onLogout }) => {
                    <div className="bg-blue-50 text-blue-600 p-2 rounded-lg"><UploadCloud size={20}/></div>
                    Secure Upload Portal
                 </h3>
-                <div {...getRootProps()} className={`border-2 border-dashed rounded-xl p-10 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 ${isDragActive ? 'border-blue-500 bg-blue-50/50' : 'border-gray-300 hover:border-gray-400 bg-gray-50'}`}>
+                <div {...getRootProps()} className={`border-2 border-dashed rounded-xl p-10 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 ${isDragActive ? 'border-blue-500 bg-blue-50/50 scale-[1.01]' : 'border-gray-300 hover:border-emerald-400 bg-gray-50'}`}>
                   <input {...getInputProps()} />
                   <div className="w-16 h-16 bg-white border border-gray-200 shadow-sm rounded-full flex items-center justify-center mb-4 text-blue-500">
                     <QrCode size={28} />
                   </div>
                   <p className="text-gray-800 font-medium text-lg">Drag & drop raw DICOM folders or ZIP files here</p>
-                  <p className="text-sm text-gray-500 mt-2">Chunked & Resumable transmission. Slices into 5MB chunks automatically.</p>
+                  <p className="text-sm text-gray-500 mt-2">Supports up to 2GB per upload session</p>
                 </div>
                 
                 {uploadProgress > 0 && uploadProgress < 100 && (
                   <div className="mt-8">
                     <div className="flex justify-between text-sm text-gray-600 mb-2 font-medium">
-                      <span className="text-blue-500 flex items-center gap-2"><div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div> Uploading & Chunking...</span>
+                      <span className="text-blue-500 flex items-center gap-2"><div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div> Uploading & Processing...</span>
                       <span className="text-gray-900 bg-gray-100 px-2 py-0.5 rounded font-mono border border-gray-200">{uploadProgress}%</span>
                     </div>
-                    <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden border border-gray-200">
-                      <div className="bg-blue-500 h-2 rounded-full transition-all duration-300 shadow-sm relative" style={{ width: `${uploadProgress}%` }}>
+                    <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden border border-gray-200">
+                      <div className="bg-gradient-to-r from-blue-500 to-emerald-500 h-2.5 rounded-full transition-all duration-500 shadow-sm relative" style={{ width: `${uploadProgress}%` }}>
                         <div className="absolute inset-0 bg-white/20 w-full"></div>
                       </div>
                     </div>
-                    <p className="text-xs text-center text-gray-500 mt-3">Network robust: Auto-resumes from last chunk if disconnected.</p>
                   </div>
                 )}
               </div>
@@ -446,7 +422,7 @@ const CaseTimeline = ({ doctor, onLogout }) => {
                       <div className="mt-2 text-sm text-gray-600 flex flex-wrap gap-x-6 gap-y-2 font-medium">
                         <span className="flex items-center gap-1.5"><span className="text-gray-500">Age:</span> <span className="text-gray-900">{patientData.age}</span></span>
                         <span className="flex items-center gap-1.5"><span className="text-gray-500">Sex:</span> <span className="text-gray-900">{patientData.sex}</span></span>
-                        <span className="flex items-center gap-1.5"><span className="text-gray-500">Modality:</span> <span className="bg-gray-100 border border-gray-200 px-2 py-0.5 rounded text-gray-800 font-bold">{patientData.modality}</span></span>
+                        <span className="flex items-center gap-1.5"><span className="text-gray-500">Modality:</span> <span className={`px-2 py-0.5 rounded text-xs font-bold border ${getModalityColor(patientData.modality)}`}>{patientData.modality}</span></span>
                         <span className="flex items-center gap-1.5"><span className="text-gray-500">Date:</span> <span className="text-gray-900">{patientData.studyDate}</span></span>
                         {patientData.instances_count !== undefined && (
                            <span className="flex items-center gap-1.5"><span className="text-gray-500 text-xs flex items-center"><FileImage size={12} className="mr-1"/> Images:</span> <span className="text-emerald-500 font-bold">{patientData.instances_count}</span></span>
@@ -511,7 +487,7 @@ const CaseTimeline = ({ doctor, onLogout }) => {
                               <label className="absolute -top-2 left-3 bg-white px-1 text-[10px] uppercase font-bold text-gray-500">Access Control</label>
                            </div>
                         </div>
-                        <button onClick={generateLink} disabled={isGenerating} className="w-full bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-bold p-3.5 rounded-lg shadow-sm transition-colors flex items-center justify-center gap-2">
+                        <button onClick={generateLink} disabled={isGenerating} className="w-full bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-bold p-3.5 rounded-lg shadow-sm transition-all flex items-center justify-center gap-2 hover:shadow-md">
                            {isGenerating ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <LinkIcon size={18}/>}
                            Save Case & Generate Secure Link
                         </button>
@@ -539,6 +515,7 @@ const CaseTimeline = ({ doctor, onLogout }) => {
         </div>
       )}
 
+      {/* Settings Modal */}
       {showSettingsModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="w-full max-w-md bg-white border border-gray-200 p-8 rounded-2xl shadow-xl relative">
@@ -565,6 +542,7 @@ const CaseTimeline = ({ doctor, onLogout }) => {
         </div>
       )}
 
+      {/* Help Modal */}
       {showHelpModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="w-full max-w-md bg-white border border-gray-200 p-8 rounded-2xl shadow-xl relative">
@@ -581,12 +559,13 @@ const CaseTimeline = ({ doctor, onLogout }) => {
         </div>
       )}
 
+      {/* Share Modal */}
       {showShareModal && patientData && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
           <div className="w-full max-w-2xl bg-white border border-gray-200 p-8 rounded-2xl shadow-xl relative">
              <div className="flex justify-between items-center mb-6">
                 <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2"><Share2 size={20} className="text-blue-500"/> Share Study</h3>
-                <button onClick={() => {setShowShareModal(false); setPatientData(null);}} className="text-gray-400 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 rounded-full w-8 h-8 flex items-center justify-center border border-gray-200">&times;</button>
+                <button onClick={() => {setShowShareModal(false); setPatientData(null); setGeneratedToken(null);}} className="text-gray-400 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 rounded-full w-8 h-8 flex items-center justify-center border border-gray-200">&times;</button>
              </div>
              
              <div className="mb-6 p-4 bg-gray-50 rounded-xl border border-gray-200 flex items-center gap-4">
@@ -595,7 +574,7 @@ const CaseTimeline = ({ doctor, onLogout }) => {
                </div>
                <div>
                   <h4 className="text-gray-900 font-bold">{patientData.name}</h4>
-                  <p className="text-xs text-gray-500">ID: {patientData.id} &bull; Modality: {patientData.modality}</p>
+                  <p className="text-xs text-gray-500">ID: {patientData.id} &bull; Modality: <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${getModalityColor(patientData.modality)}`}>{patientData.modality}</span></p>
                </div>
              </div>
 
@@ -627,7 +606,7 @@ const CaseTimeline = ({ doctor, onLogout }) => {
                         <label className="absolute -top-2 left-3 bg-white px-1 text-[10px] uppercase font-bold text-gray-500">Access Control</label>
                      </div>
                   </div>
-                  <button onClick={generateLink} disabled={isGenerating} className="w-full bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-bold p-3.5 rounded-lg shadow-sm transition-colors flex items-center justify-center gap-2">
+                  <button onClick={generateLink} disabled={isGenerating} className="w-full bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-bold p-3.5 rounded-lg shadow-sm transition-all flex items-center justify-center gap-2 hover:shadow-md">
                      {isGenerating ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <LinkIcon size={18}/>}
                      Generate Secure Link
                   </button>

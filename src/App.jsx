@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import AdminDashboard from './pages/AdminDashboard';
-import PatientPortal from './pages/PatientPortal';
 import LoginPage from './pages/LoginPage';
 import CaseTimeline from './pages/CaseTimeline';
 import PatientViewPage from './pages/PatientViewPage';
@@ -43,7 +42,6 @@ function App() {
     <BrowserRouter>
       <Routes>
         {/* Public routes */}
-        <Route path="/patient/:token" element={<PatientPortal />} />
         <Route path="/view/:token" element={<PatientViewPage />} />
         <Route
           path="/login"
