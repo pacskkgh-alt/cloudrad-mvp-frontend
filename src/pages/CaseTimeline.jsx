@@ -386,6 +386,9 @@ const CaseTimeline = ({ doctor, onLogout }) => {
           });
           setIsExtracted(true);
           fetchCases();
+          setTimeout(() => {
+            fetchCases();
+          }, 1500);
         }}
       />
 

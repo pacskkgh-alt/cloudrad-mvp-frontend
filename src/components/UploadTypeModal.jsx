@@ -10,7 +10,10 @@ import {
   Video, 
   ArrowRight,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  CheckCircle2,
+  UploadCloud,
+  FolderOpen
 } from 'lucide-react';
 import { getApiUrl, getAuthToken } from '../api';
 
@@ -23,21 +26,11 @@ import { getApiUrl, getAuthToken } from '../api';
  * 3. Other Documents from Computer or CD
  * 
  * Features:
- * - Modal Overlay: Fixed full-screen with bg-black/80 and backdrop-blur-sm
- * - Main Container: Centered, bg-[#111317], rounded-xl, border-gray-800, max-w-4xl
- * - Header: "Upload files" (white, text-xl, font-semibold), 'X' close button
- * - Grid: 2 columns top row, 1 full-width card bottom row
- * - Card 1: Disc & Laptop (text-emerald-400), "FROM CD", "Upload medical imaging from a CD"
- * - Card 2: FolderPlus (text-emerald-400), "FROM YOUR COMPUTER", "Upload medical imaging from your computer"
- * - Card 3: FileText, Image, Video, "FROM YOUR COMPUTER", "Upload other documents from your computer or CD", right blue button bg-[#1a365d] "UPLOAD"
- * - Tags: bg-[#23252b] text-gray-400 text-xs px-2 py-1 uppercase rounded font-bold
- * - Authenticated Upload: Automatic JWT retrieval and Bearer header inclusion (fixes 401 error)
- * - Hidden file inputs for CD, computer, and documents
- * 
- * @param {boolean} isOpen - Controls modal visibility
- * @param {function} onClose - Callback triggered to close modal
- * @param {function} onUploadSuccess - Callback triggered after successful upload with response data
- * @param {function} onSelect - Optional callback receiving selected type
+ * - Direct File & Folder Picker with full format support (.dcm, .zip, folders, images, docs)
+ * - Full Drag & Drop support directly into the modal
+ * - Live real-time upload progress bar and status feedback
+ * - Automatic JWT authentication header inclusion (Bearer <token>)
+ * - Automatic detection of expired sessions with one-click re-login action
  */
 export default function UploadTypeModal({ 
   isOpen = true, 
@@ -45,14 +38,16 @@ export default function UploadTypeModal({
   onUploadSuccess,
   onSelect 
 }) {
-  const cdInputRef = useRef(null);
-  const computerInputRef = useRef(null);
-  const docsInputRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const folderInputRef = useRef(null);
 
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [statusMessage, setStatusMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [isAuthError, setIsAuthError] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   // Handle ESC key to dismiss modal
   useEffect(() => {
@@ -74,30 +69,33 @@ export default function UploadTypeModal({
   const getValidToken = () => {
     return (
       getAuthToken() ||
-      localStorage.getItem('token') ||
       localStorage.getItem('cloudrad_token') ||
+      localStorage.getItem('token') ||
       localStorage.getItem('access_token') ||
-      sessionStorage.getItem('token') ||
       sessionStorage.getItem('cloudrad_token') ||
+      sessionStorage.getItem('token') ||
       ''
     );
   };
 
-  const handleFilesSelected = async (fileList, sourceType) => {
+  const handleFilesSelected = async (fileList, sourceType = 'computer') => {
     if (!fileList || fileList.length === 0) return;
 
     const files = Array.from(fileList);
     setErrorMessage('');
+    setIsAuthError(false);
+    setIsSuccess(false);
     setUploading(true);
     setUploadProgress(5);
-    setStatusMessage(`Uploading ${files.length} file${files.length > 1 ? 's' : ''}...`);
+    setStatusMessage(`جاري تحضير ${files.length} ملف للرفع...`);
 
     const token = getValidToken();
 
     // Critical check: if no token found, alert user clearly
     if (!token) {
       setUploading(false);
-      setErrorMessage('بيانات الدخول غير متوفرة (JWT Token Missing). يرجى تسجيل الدخول أولاً للمتابعة.');
+      setIsAuthError(true);
+      setErrorMessage('بيانات الدخول غير متوفرة أو انتهت صلاحية الجلسة. يرجى تسجيل الدخول أولاً للمتابعة.');
       return;
     }
 
@@ -105,13 +103,12 @@ export default function UploadTypeModal({
     files.forEach((file) => {
       formData.append('files', file);
     });
-    if (files.length === 1) {
-      formData.append('file', files[0]);
-    }
     formData.append('source_type', sourceType);
 
     try {
       const API_URL = getApiUrl();
+      setStatusMessage(`جاري رفع ${files.length} ملف إلى الخادم...`);
+
       const response = await axios.post(`${API_URL}/api/upload`, formData, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -121,53 +118,89 @@ export default function UploadTypeModal({
           if (progressEvent.total) {
             const percent = Math.round((progressEvent.loaded * 90) / progressEvent.total);
             setUploadProgress(percent);
+            if (percent >= 90) {
+              setStatusMessage('اكتمل الرفع! جاري معالجة صور DICOM والتحقق من البيانات...');
+            }
           }
         },
       });
 
       setUploadProgress(100);
-      setStatusMessage('Upload complete! Extracting metadata...');
+      setIsSuccess(true);
+      setStatusMessage('تم الرفع والمعالجة بنجاح! جاري تحديث الحالات...');
 
-      // Notify parent component
+      // Notify parent component and close
       setTimeout(() => {
         setUploading(false);
         onUploadSuccess?.(response.data);
         onClose?.();
-      }, 500);
+      }, 1000);
 
     } catch (err) {
       console.error('Upload request failed:', err);
       setUploading(false);
       setUploadProgress(0);
 
+      const status = err.response?.status;
       const serverDetail = err.response?.data?.detail;
-      if (err.response?.status === 401 || serverDetail === 'بيانات الدخول غير صالحة') {
-        setErrorMessage('خطأ في المصادقة: بيانات الدخول غير صالحة أو انتهت صلاحية الجلسة. يرجى إعادة تسجيل الدخول.');
-      } else if (err.response?.status === 413) {
-        setErrorMessage('حجم الملفات كبير جداً. الحد الأقصى المسموح به هو 2GB.');
+
+      if (status === 401 || serverDetail === 'بيانات الدخول غير صالحة') {
+        setIsAuthError(true);
+        setErrorMessage('جلسة تسجيل الدخول منتهية أو غير صالحة (بيانات الدخول غير صالحة). يرجى إعادة تسجيل الدخول لتتمكن من الرفع.');
+      } else if (status === 413) {
+        setErrorMessage('حجم الملفات المرفوعة كبير جداً. الحد الأقصى المسموح به هو 2GB.');
+      } else if (serverDetail) {
+        setErrorMessage(`خطأ من الخادم: ${serverDetail}`);
       } else {
-        setErrorMessage(serverDetail || 'فشل رفع الملفات. يرجى التأكد من اتصال الخادم وإعادة المحاولة.');
+        setErrorMessage('تعذر الاتصال بالخادم لرفع الملفات. يرجى التأكد من اتصال الإنترنت وإعادة المحاولة.');
       }
     } finally {
       // Reset input values so user can re-select the same file if needed
-      if (cdInputRef.current) cdInputRef.current.value = '';
-      if (computerInputRef.current) computerInputRef.current.value = '';
-      if (docsInputRef.current) docsInputRef.current.value = '';
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      if (folderInputRef.current) folderInputRef.current.value = '';
     }
   };
 
   const handleCardClick = (type) => {
     if (uploading) return;
     setErrorMessage('');
+    setIsAuthError(false);
     onSelect?.(type);
 
-    if (type === 'cd') {
-      cdInputRef.current?.click();
-    } else if (type === 'computer') {
-      computerInputRef.current?.click();
-    } else if (type === 'documents') {
-      docsInputRef.current?.click();
+    if (type === 'cd-folder') {
+      folderInputRef.current?.click();
+    } else {
+      fileInputRef.current?.click();
     }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!uploading) setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    if (!uploading && e.dataTransfer?.files?.length > 0) {
+      handleFilesSelected(e.dataTransfer.files, 'drag-and-drop');
+    }
+  };
+
+  const handleReLogin = () => {
+    localStorage.removeItem('cloudrad_token');
+    localStorage.removeItem('cloudrad_doctor');
+    localStorage.removeItem('token');
+    localStorage.removeItem('access_token');
+    window.location.href = '/login';
   };
 
   const imagingTags = ['MRI', 'CT', 'PET-CT', 'ULTRASOUND', 'X-RAY'];
@@ -177,48 +210,57 @@ export default function UploadTypeModal({
     <div 
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm transition-opacity duration-200"
       onClick={uploading ? undefined : onClose}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
       role="dialog"
       aria-modal="true"
       aria-labelledby="upload-modal-title"
     >
-      {/* Hidden file inputs */}
+      {/* Hidden file & folder inputs */}
       <input
-        ref={cdInputRef}
+        ref={fileInputRef}
+        type="file"
+        className="hidden"
+        multiple
+        accept=".dcm,.zip,.tar,.gz,.pdf,.doc,.docx,image/*,video/*,*"
+        onChange={(e) => handleFilesSelected(e.target.files, 'files')}
+      />
+      <input
+        ref={folderInputRef}
         type="file"
         className="hidden"
         multiple
         webkitdirectory=""
         directory=""
-        onChange={(e) => handleFilesSelected(e.target.files, 'cd')}
-      />
-      <input
-        ref={computerInputRef}
-        type="file"
-        className="hidden"
-        multiple
-        accept=".dcm,.zip,.tar,.gz,image/*,application/dicom,*"
-        onChange={(e) => handleFilesSelected(e.target.files, 'computer')}
-      />
-      <input
-        ref={docsInputRef}
-        type="file"
-        className="hidden"
-        multiple
-        accept=".pdf,.doc,.docx,image/*,video/*"
-        onChange={(e) => handleFilesSelected(e.target.files, 'documents')}
+        onChange={(e) => handleFilesSelected(e.target.files, 'folder')}
       />
 
       {/* Modal Container */}
       <div 
-        className="relative w-full max-w-4xl bg-[#111317] border border-gray-800 rounded-xl shadow-2xl p-6 sm:p-8 text-left transition-all duration-200"
+        className={`relative w-full max-w-4xl bg-[#111317] border rounded-xl shadow-2xl p-6 sm:p-8 text-left transition-all duration-200 ${
+          isDragging 
+            ? 'border-emerald-500 ring-2 ring-emerald-500/40 bg-[#161a22]' 
+            : 'border-gray-800'
+        }`}
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Drag overlay indicator */}
+        {isDragging && (
+          <div className="absolute inset-0 bg-emerald-950/70 backdrop-blur-xs border-2 border-dashed border-emerald-400 rounded-xl z-30 flex flex-col items-center justify-center pointer-events-none p-6 text-center">
+            <UploadCloud size={56} className="text-emerald-400 animate-bounce mb-3" />
+            <span className="text-white text-xl font-bold">أفلت الملفات هنا لبدء الرفع فوراً</span>
+            <span className="text-emerald-300 text-sm mt-1">يدعم ملفات ومجلدات DICOM والملفات المضغوطة ZIP</span>
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex items-center justify-between pb-6 border-b border-gray-800">
           <h2 
             id="upload-modal-title" 
-            className="text-xl font-semibold text-white tracking-wide"
+            className="text-xl font-semibold text-white tracking-wide flex items-center gap-2.5"
           >
+            <UploadCloud size={22} className="text-emerald-400" />
             Upload files
           </h2>
           <button
@@ -234,39 +276,65 @@ export default function UploadTypeModal({
 
         {/* Error Alert Banner */}
         {errorMessage && (
-          <div className="mt-4 p-4 rounded-lg bg-red-950/40 border border-red-800/60 text-red-300 text-sm flex items-start gap-3 animate-fadeIn">
-            <AlertCircle size={18} className="text-red-400 shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <span className="font-semibold block mb-0.5">خطأ في الرفع</span>
-              <span>{errorMessage}</span>
+          <div className="mt-4 p-4 rounded-lg bg-red-950/60 border border-red-800 text-red-200 text-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-fadeIn">
+            <div className="flex items-start gap-3">
+              <AlertCircle size={20} className="text-red-400 shrink-0 mt-0.5" />
+              <div>
+                <span className="font-bold block mb-0.5 text-red-300">خطأ في الرفع</span>
+                <span>{errorMessage}</span>
+              </div>
             </div>
-            <button
-              onClick={() => setErrorMessage('')}
-              className="text-red-400 hover:text-red-200 p-1 rounded"
-            >
-              <X size={14} />
-            </button>
+            <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+              {isAuthError && (
+                <button
+                  type="button"
+                  onClick={handleReLogin}
+                  className="bg-red-600 hover:bg-red-500 text-white font-bold px-3.5 py-1.5 rounded-lg text-xs transition-colors shadow-sm cursor-pointer"
+                >
+                  تسجيل الدخول مجدداً
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setErrorMessage('')}
+                className="text-red-400 hover:text-red-200 p-1 rounded"
+              >
+                <X size={16} />
+              </button>
+            </div>
           </div>
         )}
 
-        {/* Upload Progress Banner */}
+        {/* Active Uploading & Progress Screen */}
         {uploading && (
-          <div className="mt-4 p-5 rounded-lg bg-[#1a1c22] border border-gray-700/80 space-y-3 animate-fadeIn">
+          <div className="mt-6 p-6 rounded-xl bg-[#1a1c22] border border-gray-700/80 space-y-4 animate-fadeIn">
             <div className="flex justify-between items-center text-sm">
-              <span className="text-emerald-400 flex items-center gap-2 font-medium">
-                <Loader2 size={16} className="animate-spin text-emerald-400" />
-                {statusMessage || 'Processing upload...'}
+              <span className="text-emerald-400 flex items-center gap-2.5 font-bold">
+                {isSuccess ? (
+                  <CheckCircle2 size={20} className="text-emerald-400" />
+                ) : (
+                  <Loader2 size={20} className="animate-spin text-emerald-400" />
+                )}
+                {statusMessage}
               </span>
-              <span className="text-gray-300 font-mono font-bold bg-[#23252b] px-2.5 py-0.5 rounded border border-gray-700">
+              <span className="text-emerald-300 font-mono font-bold bg-[#23252b] px-3 py-1 rounded-md border border-gray-700 text-sm shadow-sm">
                 {uploadProgress}%
               </span>
             </div>
-            <div className="w-full bg-[#111317] rounded-full h-2 overflow-hidden border border-gray-800">
+            
+            {/* Animated Progress Bar */}
+            <div className="w-full bg-[#111317] rounded-full h-3 overflow-hidden border border-gray-800 shadow-inner">
               <div 
-                className="bg-gradient-to-r from-blue-500 to-emerald-400 h-2 rounded-full transition-all duration-300 shadow-sm"
+                className="bg-gradient-to-r from-blue-500 via-teal-400 to-emerald-400 h-full rounded-full transition-all duration-300 shadow-sm relative"
                 style={{ width: `${uploadProgress}%` }}
-              />
+              >
+                <div className="absolute inset-0 bg-white/20 animate-pulse w-full"></div>
+              </div>
             </div>
+
+            <p className="text-xs text-gray-400 text-right">
+              يرجى عدم إغلاق هذه الصفحة حتى تكتمل عملية الرفع وفهرسة الفحص في السجل الطبي.
+            </p>
           </div>
         )}
 
@@ -287,11 +355,25 @@ export default function UploadTypeModal({
             >
               <div>
                 {/* Icon Composition */}
-                <div className="flex items-center gap-2 mb-4">
+                <div className="flex items-center justify-between mb-4">
                   <div className="relative flex items-center justify-center w-12 h-12 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 group-hover:scale-105 transition-transform duration-200">
                     <Laptop size={22} className="text-emerald-400" />
                     <Disc size={15} className="absolute -bottom-1 -right-1 text-emerald-300 bg-[#1a1c22] rounded-full p-0.5 shadow-sm" />
                   </div>
+
+                  {/* Optional Folder Select Shortcut */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCardClick('cd-folder');
+                    }}
+                    title="Upload whole CD directory"
+                    className="text-[11px] font-semibold text-gray-400 hover:text-emerald-300 bg-[#23252b] hover:bg-gray-800 px-2.5 py-1 rounded border border-gray-700/60 flex items-center gap-1.5 transition-colors"
+                  >
+                    <FolderOpen size={13} />
+                    <span>Select Folder</span>
+                  </button>
                 </div>
 
                 {/* Sub-title */}
