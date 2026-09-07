@@ -8,6 +8,7 @@ import {
   Search, Plus, LogOut, Settings, HelpCircle, Trash2, ShieldAlert, Check, Copy, Link as LinkIcon,
   Menu, Users, Target, Inbox, Trash, UserPlus, Video, Bell, MessageCircle, Calendar, Filter, Folder, MoreVertical, Loader2
 } from 'lucide-react';
+import StudyHoverActions from '../components/StudyHoverActions';
 
 const API_URL = getApiUrl();
 const PACS_URL = getPacsUrl();
@@ -315,60 +316,92 @@ const CaseTimeline = ({ doctor, onLogout }) => {
              ) : (
                 <div className="flex-1 overflow-y-auto bg-gray-50/10">
                    {filteredCases.map((c, index) => (
-                     <div 
-                       key={c.id} 
-                       className="grid grid-cols-12 border-b border-gray-100 p-4 text-sm font-medium text-gray-800 bg-white hover:bg-emerald-50/30 transition-all items-center group cursor-pointer pl-6"
-                       style={{ animationDelay: `${index * 30}ms` }}
-                       onClick={() => {
-                         if (c.study_instance_uid) {
-                           window.open(`${PACS_URL}/ohif/viewer?url=/dicom-web/studies/${c.study_instance_uid}`, '_blank');
-                         } else if (c.orthanc_study_uuid) {
-                           window.open(`${PACS_URL}/osimis-viewer/app/index.html?study=${c.orthanc_study_uuid}`, '_blank');
-                         }
-                       }}
-                     >
+                      <div 
+                        key={c.id} 
+                        className="relative grid grid-cols-12 border-b border-gray-100 p-4 text-sm font-medium text-gray-800 bg-white hover:bg-emerald-50/30 transition-all items-center group cursor-pointer pl-6"
+                        style={{ animationDelay: `${index * 30}ms` }}
+                        onClick={() => {
+                          if (c.study_instance_uid) {
+                            window.open(`${PACS_URL}/ohif/viewer?url=/dicom-web/studies/${c.study_instance_uid}`, '_blank');
+                          } else if (c.orthanc_study_uuid) {
+                            window.open(`${PACS_URL}/osimis-viewer/app/index.html?study=${c.orthanc_study_uuid}`, '_blank');
+                          }
+                        }}
+                      >
 
-                        <div className="col-span-1 items-center justify-start flex">
-                           <input type="checkbox" className="w-3.5 h-3.5 rounded border-gray-300 text-emerald-500 focus:ring-emerald-500 accent-emerald-500 cursor-pointer" onClick={(e)=>e.stopPropagation()} />
-                        </div>
-                        
-                        <div className="col-span-3 flex items-center gap-4">
-                           <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-200 flex items-center justify-center overflow-hidden shrink-0 relative shadow-sm">
-                              <span className="text-gray-100 text-2xl font-black font-serif italic z-10 opacity-80">{(c.patient_name || 'U').charAt(0)}</span>
-                           </div>
-                           <div className="flex flex-col">
-                              <span className="text-gray-900 font-bold text-[15px] group-hover:text-emerald-700 transition-colors">{c.patient_name || 'Unknown'}</span>
-                              {c.has_report && <span className="text-[10px] text-emerald-500 font-bold mt-0.5 flex items-center gap-1"><Check size={10}/> Report ready</span>}
-                           </div>
-                        </div>
-                        
-                        <div className="col-span-2 text-gray-600 font-semibold text-[13px]">
-                           {c.patient_id_number || '-'}
-                        </div>
-                        
-                        <div className="col-span-2 flex items-center">
-                           <span className={`px-2.5 py-1 rounded-md text-xs font-bold border ${getModalityColor(c.modality)}`}>
-                             {c.modality || 'N/A'}
-                           </span>
-                        </div>
-                        
-                        <div className="col-span-1 flex flex-col text-[12px]">
-                           <span className="text-gray-900 font-semibold mb-0.5">{relativeTime(c.created_at)}</span>
-                        </div>
-                        
-                        <div className="col-span-1 font-semibold text-gray-600 text-[13px]">
-                           {c.study_date ? new Date(c.study_date).toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: '2-digit'}) : 'N/A'}
-                        </div>
-                        
-                        <div className="col-span-2 flex items-center justify-end gap-3 text-right pr-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                           <button onClick={(e) => { e.stopPropagation(); openShareModal(c); }} className="border border-blue-200 bg-white text-blue-600 hover:bg-blue-50 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm hover:shadow">
-                              <Share2 size={14}/> Share
-                           </button>
-                           <button onClick={(e) => { e.stopPropagation(); deleteStudy(c.id); }} className="text-gray-400 hover:text-rose-500 p-1.5 rounded-lg hover:bg-rose-50 transition-all focus:outline-none">
-                              <Trash2 size={16}/>
-                           </button>
-                        </div>
-                     </div>
+                         <div className="col-span-1 items-center justify-start flex">
+                            <input type="checkbox" className="w-3.5 h-3.5 rounded border-gray-300 text-emerald-500 focus:ring-emerald-500 accent-emerald-500 cursor-pointer" onClick={(e)=>e.stopPropagation()} />
+                         </div>
+                         
+                         <div className="col-span-3 flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-200 flex items-center justify-center overflow-hidden shrink-0 relative shadow-sm">
+                               <span className="text-gray-100 text-2xl font-black font-serif italic z-10 opacity-80">{(c.patient_name || 'U').charAt(0)}</span>
+                            </div>
+                            <div className="flex flex-col">
+                               <span className="text-gray-900 font-bold text-[15px] group-hover:text-emerald-700 transition-colors">{c.patient_name || 'Unknown'}</span>
+                               {c.has_report && <span className="text-[10px] text-emerald-500 font-bold mt-0.5 flex items-center gap-1"><Check size={10}/> Report ready</span>}
+                            </div>
+                         </div>
+                         
+                         <div className="col-span-2 text-gray-600 font-semibold text-[13px]">
+                            {c.patient_id_number || '-'}
+                         </div>
+                         
+                         <div className="col-span-2 flex items-center">
+                            <span className={`px-2.5 py-1 rounded-md text-xs font-bold border ${getModalityColor(c.modality)}`}>
+                              {c.modality || 'N/A'}
+                            </span>
+                         </div>
+                         
+                         <div className="col-span-1 flex flex-col text-[12px]">
+                            <span className="text-gray-900 font-semibold mb-0.5">{relativeTime(c.created_at)}</span>
+                         </div>
+                         
+                         <div className="col-span-1 font-semibold text-gray-600 text-[13px]">
+                            {c.study_date ? new Date(c.study_date).toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: '2-digit'}) : 'N/A'}
+                         </div>
+                         
+                         <div className="col-span-2 flex items-center justify-end gap-3 text-right pr-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onClick={(e) => { e.stopPropagation(); openShareModal(c); }} className="border border-blue-200 bg-white text-blue-600 hover:bg-blue-50 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm hover:shadow">
+                               <Share2 size={14}/> Share
+                            </button>
+                            <button onClick={(e) => { e.stopPropagation(); deleteStudy(c.id); }} className="text-gray-400 hover:text-rose-500 p-1.5 rounded-lg hover:bg-rose-50 transition-all focus:outline-none">
+                               <Trash2 size={16}/>
+                            </button>
+                         </div>
+
+                         {/* Hover Actions Overlay */}
+                         <StudyHoverActions
+                           patientInitial={(c.patient_name || 'U').charAt(0)}
+                           hasReport={Boolean(c.has_report)}
+                           onCreateCase={() => {
+                             if (c.study_instance_uid) {
+                               window.open(`${PACS_URL}/ohif/viewer?url=/dicom-web/studies/${c.study_instance_uid}`, '_blank');
+                             } else if (c.orthanc_study_uuid) {
+                               window.open(`${PACS_URL}/osimis-viewer/app/index.html?study=${c.orthanc_study_uuid}`, '_blank');
+                             }
+                           }}
+                           onShare={() => openShareModal(c)}
+                           onManageLabels={() => {
+                             alert(`Manage labels for ${c.patient_name || 'Study'}`);
+                           }}
+                           onCompare={() => {
+                             if (c.study_instance_uid) {
+                               window.open(`${PACS_URL}/ohif/viewer?url=/dicom-web/studies/${c.study_instance_uid}`, '_blank');
+                             } else if (c.orthanc_study_uuid) {
+                               window.open(`${PACS_URL}/osimis-viewer/app/index.html?study=${c.orthanc_study_uuid}`, '_blank');
+                             }
+                           }}
+                           onDownload={() => {
+                             if (c.orthanc_study_uuid) {
+                               window.open(`${PACS_URL}/studies/${c.orthanc_study_uuid}/archive`, '_blank');
+                             } else {
+                               alert('Direct download link not available for this study.');
+                             }
+                           }}
+                           onTrash={() => deleteStudy(c.id)}
+                         />
+                      </div>
                    ))}
                 </div>
              )}
