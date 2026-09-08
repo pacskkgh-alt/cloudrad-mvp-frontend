@@ -761,13 +761,15 @@ const CaseTimeline = ({ doctor, onLogout }) => {
                       {copiedKey ? <Check size={24} className="mb-3" /> : <Copy size={24} className="mb-3" />}
                       {copiedKey ? 'Link Copied!' : 'Copy Secure Link'}
                    </button>
-                   <a href={`https://wa.me/?text=${encodeURIComponent(`Hello ${patientData.name}, your study is ready. View it here: ${window.location.origin}/view/${generatedToken} ${linkPasscode ? `(Passcode: ${linkPasscode})` : ''}`)}`} target="_blank" rel="noreferrer" className="flex flex-col items-center justify-center p-4 h-32 rounded-lg bg-white text-gray-600 hover:bg-[#25D366]/5 hover:text-[#25D366] hover:border-[#25D366]/30 transition-all border border-gray-200 font-semibold text-sm group shadow-sm">
+                   <a href={`https://wa.me/?text=${encodeURIComponent(`Hello ${patientData?.name || 'Patient'}, your study is ready. View it here: ${window.location.origin}/view/${generatedToken} ${linkPasscode ? `(Passcode: ${linkPasscode})` : ''}`)}`} target="_blank" rel="noreferrer" className="flex flex-col items-center justify-center p-4 h-32 rounded-lg bg-white text-gray-600 hover:bg-[#25D366]/5 hover:text-[#25D366] hover:border-[#25D366]/30 transition-all border border-gray-200 font-semibold text-sm group shadow-sm">
                       <MessageSquare size={24} className="mb-3 text-gray-400 group-hover:text-[#25D366] transition-colors" />
-                   <a href={`mailto:?subject=Your Radiology Study is Ready&body=${encodeURIComponent(`Hello ${patientData.name}, your study is ready.\nView securely: ${window.location.origin}/view/${generatedToken} \n${linkPasscode ? `(Passcode: ${linkPasscode})` : ''}`)}`} className="flex flex-col items-center justify-center p-4 h-32 rounded-lg bg-white text-gray-600 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-all border border-gray-200 font-semibold text-sm group shadow-sm">
+                      WhatsApp
+                   </a>
+                   <a href={`mailto:?subject=Your Radiology Study is Ready&body=${encodeURIComponent(`Hello ${patientData?.name || 'Patient'}, your study is ready.\nView securely: ${window.location.origin}/view/${generatedToken} \n${linkPasscode ? `(Passcode: ${linkPasscode})` : ''}`)}`} className="flex flex-col items-center justify-center p-4 h-32 rounded-lg bg-white text-gray-600 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-all border border-gray-200 font-semibold text-sm group shadow-sm">
                       <Mail size={24} className="mb-3 text-gray-400 group-hover:text-blue-500 transition-colors" />
                       Email Link
-                    </a>
-                 </div>
+                   </a>
+                </div>
               )}
            </div>
         </div>
