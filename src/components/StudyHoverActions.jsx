@@ -7,7 +7,8 @@ import {
   Columns, 
   Download, 
   Trash2, 
-  FileText 
+  FileText,
+  Building2 
 } from 'lucide-react';
 
 /**
@@ -147,14 +148,15 @@ export default function StudyHoverActions({
           <span>Share</span>
         </button>
 
-        {/* 3. Manage labels */}
+        {/* 3. Telerad Dispatch */}
         <button
           type="button"
           onClick={(e) => handleAction(onManageLabels, e)}
-          className="flex flex-col items-center justify-center gap-1.5 px-3 py-1 hover:bg-gray-50 active:bg-gray-100 rounded-md transition-colors text-xs font-medium text-gray-600 hover:text-gray-900 shrink-0 focus:outline-none group/btn cursor-pointer"
+          title="Dispatch to Teleradiology Network"
+          className="flex flex-col items-center justify-center gap-1.5 px-3 py-1 hover:bg-teal-50 active:bg-teal-100 rounded-md transition-colors text-xs font-medium text-gray-600 hover:text-teal-700 shrink-0 focus:outline-none group/btn cursor-pointer"
         >
-          <Tag className="w-5 h-5 text-gray-500 group-hover/btn:scale-110 transition-transform" />
-          <span>Manage labels</span>
+          <Building2 className="w-5 h-5 text-teal-600 group-hover/btn:scale-110 transition-transform" />
+          <span>Telerad</span>
         </button>
 
         {/* 4. Compare */}

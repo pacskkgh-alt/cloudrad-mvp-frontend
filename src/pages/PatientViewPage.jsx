@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import DOMPurify from 'dompurify';
 import { useParams } from 'react-router-dom';
-import { DownloadCloud, ShieldAlert, FileText, Image as ImageIcon, ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
+import { DownloadCloud, ShieldAlert, FileText, Image as ImageIcon, ChevronLeft, ChevronRight, ExternalLink, Stethoscope } from 'lucide-react';
 import axios from 'axios';
 import { getApiUrl, getPacsUrl } from '../api';
+import SecondOpinionModal from '../components/SecondOpinionModal';
 
 const API_URL = getApiUrl();
 const PACS_URL = getPacsUrl();
@@ -15,6 +16,7 @@ export default function PatientViewPage() {
   const [loading, setLoading] = useState(true);
   const [errorStatus, setErrorStatus] = useState(null);
   const [passcode, setPasscode] = useState('');
+  const [showSecondOpinionModal, setShowSecondOpinionModal] = useState(false);
 
   useEffect(() => {
     verifyToken();
@@ -155,12 +157,20 @@ export default function PatientViewPage() {
               className="flex-1 prose prose-sm text-gray-700 mb-6"
               dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(report) }}
             />
-            <button 
-              onClick={handleDownload}
-              className="mt-auto w-full md:w-auto self-start flex items-center justify-center gap-2 bg-gray-900 hover:bg-gray-800 text-white px-6 py-3 rounded-xl font-semibold shadow-md transition-colors"
-            >
-              <DownloadCloud size={18} /> Download PDF Report
-            </button>
+            <div className="mt-auto flex flex-wrap items-center gap-3">
+              <button 
+                onClick={handleDownload}
+                className="flex items-center justify-center gap-2 bg-gray-900 hover:bg-gray-800 text-white px-5 py-2.5 rounded-xl font-semibold shadow-sm transition-colors text-sm"
+              >
+                <DownloadCloud size={17} /> Download PDF Report
+              </button>
+              <button
+                onClick={() => setShowSecondOpinionModal(true)}
+                className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2.5 rounded-xl font-semibold shadow-sm transition-colors text-sm"
+              >
+                <Stethoscope size={17} /> طلب رأي طبي ثانٍ (Second Opinion)
+              </button>
+            </div>
           </div>
           
           {/* Desktop Only: Advanced WebPACS Viewer */}
@@ -237,6 +247,15 @@ export default function PatientViewPage() {
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
+
+      {/* Second Opinion Modal */}
+      <SecondOpinionModal
+        isOpen={showSecondOpinionModal}
+        onClose={() => setShowSecondOpinionModal(false)}
+        studyId={studyInfo?.study_id}
+        studyModality={studyInfo?.modality}
+        patientName={studyInfo?.patient_name}
+      />
     </div>
   );
 }

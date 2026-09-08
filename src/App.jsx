@@ -4,6 +4,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import LoginPage from './pages/LoginPage';
 import CaseTimeline from './pages/CaseTimeline';
 import PatientViewPage from './pages/PatientViewPage';
+import TeleradWorklist from './pages/TeleradWorklist';
 
 function App() {
   const [doctor, setDoctor] = useState(null);
@@ -71,6 +72,12 @@ function App() {
             ) : (
               <Navigate to="/login" replace />
             )
+          }
+        />
+        <Route
+          path="/telerad"
+          element={
+            doctor ? <TeleradWorklist doctor={doctor} onLogout={handleLogout} /> : <Navigate to="/login" replace />
           }
         />
       </Routes>
