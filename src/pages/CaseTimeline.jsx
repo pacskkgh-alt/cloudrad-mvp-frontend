@@ -6,10 +6,11 @@ import {
   FileImage, ChevronRight,
   Search, Plus, LogOut, Settings, HelpCircle, Trash2, ShieldAlert, Check, Copy, Link as LinkIcon,
   Menu, Users, Target, Inbox, Trash, UserPlus, Video, Bell, MessageCircle, Calendar, Filter, Folder, MoreVertical, Loader2,
-  Activity, Stethoscope, Building2, Send, CheckCircle2, AlertCircle
+  Activity, Stethoscope, Building2, Send, CheckCircle2, AlertCircle, UserCog
 } from 'lucide-react';
 import StudyHoverActions from '../components/StudyHoverActions';
 import UploadTypeModal from '../components/UploadTypeModal';
+import ClinicManagementModal from '../components/ClinicManagementModal';
 
 const API_URL = getApiUrl();
 const PACS_URL = getPacsUrl();
@@ -24,6 +25,7 @@ const CaseTimeline = ({ doctor, onLogout }) => {
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showClinicAdminModal, setShowClinicAdminModal] = useState(false);
   
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isExtracted, setIsExtracted] = useState(false);
@@ -269,6 +271,19 @@ const CaseTimeline = ({ doctor, onLogout }) => {
                </span>
              )}
            </button>
+           
+           {doctor?.role === 'admin' && (
+             <button onClick={() => window.location.href = '/admin'} className="text-blue-500 bg-blue-50 p-2 rounded-lg hover:bg-blue-100 transition-colors" title="إدارة النظام">
+               <Building2 size={20}/>
+             </button>
+           )}
+
+           {doctor?.role === 'clinic_admin' && (
+             <button onClick={() => setShowClinicAdminModal(true)} className="text-purple-500 bg-purple-50 p-2 rounded-lg hover:bg-purple-100 transition-colors" title="إدارة العيادة">
+               <UserCog size={20}/>
+             </button>
+           )}
+
            <button className="text-gray-400 hover:text-gray-600 p-2 transition-colors"><Trash size={20} title="Trash"/></button>
            <button onClick={() => setShowSettingsModal(true)} className="text-gray-400 hover:text-emerald-600 p-2 transition-colors"><Settings size={20} title="Settings"/></button>
            <button onClick={() => setShowHelpModal(true)} className="text-gray-400 hover:text-blue-600 p-2 transition-colors"><HelpCircle size={20} title="Help"/></button>
@@ -1052,6 +1067,10 @@ const CaseTimeline = ({ doctor, onLogout }) => {
             )}
           </div>
         </div>
+      )}
+      {/* Clinic Admin Modal */}
+      {showClinicAdminModal && (
+         <ClinicManagementModal onClose={() => setShowClinicAdminModal(false)} />
       )}
     </div>
   );
