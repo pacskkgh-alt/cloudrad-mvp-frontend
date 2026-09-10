@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { Activity, Clock, AlertCircle, Eye, CheckCircle, ShieldAlert } from "lucide-react";
+import { Activity, Clock, Eye, CheckCircle, ShieldAlert } from "lucide-react";
 
 export default function TeleradWorklist() {
   const [cases, setCases] = useState([]);

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
-import { Upload, HardDrive, FileArchive, CheckCircle, RefreshCcw, Eye } from "lucide-react";
+import { HardDrive, FileArchive, RefreshCcw, Eye } from "lucide-react";
 import { getApiUrl } from "../config";
 
 export default function TechnicianStation({ user, onLogout }) {
