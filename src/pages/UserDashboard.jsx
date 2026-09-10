@@ -3,9 +3,10 @@ import axios from 'axios';
 import { getApiUrl, getAuthHeaders, getModalityColor } from '../api';
 import { 
   Share2, ShieldAlert, Check, Copy, Link as LinkIcon, 
-  UploadCloud, Clock, Search, Menu, Users, LogOut 
+  UploadCloud, Clock, Search, Menu, Users, LogOut, UserCog
 } from 'lucide-react';
 import UploadTypeModal from '../components/UploadTypeModal';
+import ClinicManagementModal from '../components/ClinicManagementModal';
 
 const API_URL = getApiUrl();
 
@@ -32,6 +33,7 @@ export default function UserDashboard({ doctor, onLogout }) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [shareToken, setShareToken] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [showClinicAdmin, setShowClinicAdmin] = useState(false);
 
   // Fetch studies
   const fetchStudies = useCallback(async () => {
@@ -106,6 +108,12 @@ export default function UserDashboard({ doctor, onLogout }) {
           <button onClick={fetchStudies} className="text-emerald-500 bg-emerald-50 p-2 rounded-lg hover:bg-emerald-100 transition-colors" title="Reload Studies">
             <Users size={20} />
           </button>
+          
+          {doctor?.role === 'clinic_admin' && (
+            <button onClick={() => setShowClinicAdmin(true)} className="text-purple-500 bg-purple-50 p-2 rounded-lg hover:bg-purple-100 transition-colors" title="إدارة العيادة">
+              <UserCog size={20} />
+            </button>
+          )}
         </div>
         {onLogout && (
           <button onClick={onLogout} className="text-gray-400 hover:text-red-500 p-2" title="Logout">
@@ -315,6 +323,10 @@ export default function UserDashboard({ doctor, onLogout }) {
           setShowUploadModal(false);
         }}
       />
+      
+      {showClinicAdmin && (
+        <ClinicManagementModal onClose={() => setShowClinicAdmin(false)} />
+      )}
     </div>
   );
 }

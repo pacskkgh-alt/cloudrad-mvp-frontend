@@ -256,6 +256,7 @@ export default function AdminDashboard({ doctor, onLogout }) {
                 <select value={userForm.role} onChange={e=>setUserForm({...userForm, role: e.target.value})} className="w-full bg-slate-800/50 border border-slate-700 p-3 rounded-xl focus:border-indigo-500 outline-none text-slate-300">
                   <option value="user">دور (فني المركز الطبي) - رفع واستقبال</option>
                   <option value="doctor">دور (الطبيب المعالج المركزي) - كتابة تقارير</option>
+                  <option value="clinic_admin">دور (مدير العيادة) - إدارة الطاقم</option>
                   <option value="admin">دور (مدير نظام العصب) - لوحة التحكم الشاملة</option>
                 </select>
 
