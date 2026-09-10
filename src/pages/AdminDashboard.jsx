@@ -22,20 +22,25 @@ export default function AdminDashboard({ doctor, onLogout }) {
   const [clinicForm, setClinicForm] = useState({ name: '', address: '', phone_call: '' });
 
   const fetchData = async () => {
-    try {
-      const p1 = axios.get(`${API_URL}/api/studies`, { headers: getAuthHeaders() });
-      const p2 = axios.get(`${API_URL}/api/admin/users`, { headers: getAuthHeaders() });
-      const p3 = axios.get(`${API_URL}/api/admin/clinics`, { headers: getAuthHeaders() });
-      const p4 = axios.get(`${API_URL}/api/admin/shares`, { headers: getAuthHeaders() });
-      
-      const [resStudies, resUsers, resClinics, resLinks] = await Promise.all([p1, p2, p3, p4]);
-      setStats({ totalStudies: resStudies.data.length });
-      setUsers(resUsers.data);
-      setClinics(resClinics.data);
-      setLinks(resLinks.data);
-    } catch (err) {
-      console.error(err);
-    }
+    const fetchSafe = async (url) => {
+      try {
+        const res = await axios.get(url, { headers: getAuthHeaders() });
+        return res.data;
+      } catch (err) {
+        console.error(`Error fetching ${url}:`, err);
+        return null;
+      }
+    };
+
+    const studiesData = await fetchSafe(`${API_URL}/api/studies`);
+    const usersData = await fetchSafe(`${API_URL}/api/admin/users`);
+    const clinicsData = await fetchSafe(`${API_URL}/api/admin/clinics`);
+    const sharesData = await fetchSafe(`${API_URL}/api/admin/shares`);
+
+    if (studiesData) setStats({ totalStudies: studiesData.length });
+    if (usersData) setUsers(usersData);
+    if (clinicsData) setClinics(clinicsData);
+    if (sharesData) setLinks(sharesData);
   };
 
   useEffect(() => {
