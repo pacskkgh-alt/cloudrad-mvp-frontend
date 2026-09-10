@@ -5,6 +5,7 @@ import LoginPage from './pages/LoginPage';
 import CaseTimeline from './pages/CaseTimeline';
 import PatientViewPage from './pages/PatientViewPage';
 import TeleradWorklist from './pages/TeleradWorklist';
+import LandingPage from './pages/LandingPage';
 
 function App() {
   const [doctor, setDoctor] = useState(null);
@@ -42,18 +43,18 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Public routes */}
+        <Route path="/" element={<LandingPage />} />
         <Route path="/view/:token" element={<PatientViewPage />} />
         <Route
           path="/login"
           element={
-            doctor ? <Navigate to="/" replace /> : <LoginPage onLogin={handleLogin} />
+            doctor ? <Navigate to="/app" replace /> : <LoginPage onLogin={handleLogin} />
           }
         />
 
         {/* Protected routes */}
         <Route
-          path="/"
+          path="/app"
           element={
             doctor ? (
               doctor.role === 'admin' ? <Navigate to="/admin" replace /> :
@@ -68,7 +69,7 @@ function App() {
           element={
             doctor ? (
               doctor.role === 'admin' ? <AdminDashboard doctor={doctor} onLogout={handleLogout} /> :
-              <Navigate to="/" replace />
+              <Navigate to="/app" replace />
             ) : (
               <Navigate to="/login" replace />
             )
