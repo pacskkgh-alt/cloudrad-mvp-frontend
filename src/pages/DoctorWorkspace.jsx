@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { Stethoscope, FileText, Eye, Download, CheckCircle, Search } from "lucide-react";
+import { Stethoscope, FileText, Eye, Download, CheckCircle } from "lucide-react";
 import { getApiUrl } from "../config";
 
 export default function DoctorWorkspace({ doctor, onLogout }) {
   const [studies, setStudies] = useState([]);
   const [selectedStudy, setSelectedStudy] = useState(null);
   const [reportText, setReportText] = useState("");
-  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
 
   const token = localStorage.getItem("cloudrad_token");
@@ -36,8 +35,6 @@ export default function DoctorWorkspace({ doctor, onLogout }) {
       setStudies(studiesWithReports);
     } catch (err) {
       console.error("فشل جلب الدراسات", err);
-    } finally {
-      setLoading(false);
     }
   };
 
