@@ -99,11 +99,11 @@ export default function UserDashboard({ doctor, onLogout }) {
     <div className="min-h-screen bg-gray-50 text-gray-800 flex">
       {/* Sidebar */}
       <aside className="w-16 bg-white border-r border-gray-200 flex flex-col items-center py-4 flex-shrink-0">
-        <button className="text-gray-500 hover:text-gray-800 mb-8">
+        <button onClick={fetchStudies} className="text-gray-500 hover:text-emerald-600 mb-8" title="Refresh Studies">
           <Menu size={24} />
         </button>
         <div className="flex-1 flex flex-col items-center gap-4">
-          <button className="text-emerald-500 bg-emerald-50 p-2 rounded-lg" title="Studies">
+          <button onClick={fetchStudies} className="text-emerald-500 bg-emerald-50 p-2 rounded-lg hover:bg-emerald-100 transition-colors" title="Reload Studies">
             <Users size={20} />
           </button>
         </div>
@@ -175,7 +175,24 @@ export default function UserDashboard({ doctor, onLogout }) {
                       </td>
                       <td className="px-6 py-4 text-gray-600">{study.instances_count || 0}</td>
                       <td className="px-6 py-4 text-gray-500 text-xs">{study.study_date || study.created_at || '—'}</td>
-                      <td className="px-6 py-4 text-right">
+                      <td className="px-6 py-4 text-right flex items-center justify-end gap-4">
+                        <button
+                          onClick={() => {
+                            if (study.orthanc_study_uuid) {
+                              const pacsUrl = API_URL.replace('api.', 'pacs.');
+                              window.open(`${pacsUrl}/osimis-viewer/app/index.html?study=${study.orthanc_study_uuid}`, '_blank');
+                            } else if (study.study_instance_uid) {
+                              const pacsUrl = API_URL.replace('api.', 'pacs.');
+                              window.open(`${pacsUrl}/ohif/viewer?url=/dicom-web/studies/${study.study_instance_uid}`, '_blank');
+                            } else {
+                              alert('لا يمكن عرض الدراسة: المعرّف غير متوفر حالياً.');
+                            }
+                          }}
+                          className="text-emerald-600 hover:text-emerald-800 font-medium text-xs flex items-center gap-1.5"
+                          title="View Images"
+                        >
+                          <Search size={14} /> عرض
+                        </button>
                         <button
                           onClick={() => {
                             setSelectedStudy(study);
@@ -183,9 +200,10 @@ export default function UserDashboard({ doctor, onLogout }) {
                             setIsAnonymize(false);
                             setShowShareModal(true);
                           }}
-                          className="text-blue-600 hover:text-blue-800 font-medium text-xs flex items-center gap-1.5 ml-auto"
+                          className="text-blue-600 hover:text-blue-800 font-medium text-xs flex items-center gap-1.5"
+                          title="Share Link"
                         >
-                          <Share2 size={14} /> Share
+                          <Share2 size={14} /> مشاركة
                         </button>
                       </td>
                     </tr>

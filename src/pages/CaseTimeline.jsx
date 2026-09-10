@@ -306,8 +306,8 @@ const CaseTimeline = ({ doctor, onLogout }) => {
             
             <div className="h-6 w-px bg-gray-200 mx-2"></div>
             
-            <button className="text-gray-500 hover:text-gray-800 p-1.5 transition-colors relative"><Bell size={20}/></button>
-            <button className="text-gray-500 hover:text-gray-800 p-1.5 transition-colors"><MessageCircle size={20}/></button>
+            <button onClick={() => alert('الإشعارات - قريباً')} className="text-gray-500 hover:text-gray-800 p-1.5 transition-colors relative" title="Notifications"><Bell size={20}/></button>
+            <button onClick={() => alert('الرسائل - قريباً')} className="text-gray-500 hover:text-gray-800 p-1.5 transition-colors" title="Messages"><MessageCircle size={20}/></button>
             
             <div className="flex items-center gap-2 ml-2 cursor-pointer border border-gray-200 pl-2 pr-4 py-1.5 rounded-full shadow-sm hover:shadow transition-all bg-white">
                <div className="w-7 h-7 rounded-full bg-teal-500 flex items-center justify-center text-white text-xs font-bold overflow-hidden">
